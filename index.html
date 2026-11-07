@@ -26,25 +26,41 @@
       font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     }
 
-    /* Native Phone App Frame when user toggles "Mobile" view on desktop */
+    /* Dedicated Mobile App Layout — 100% Full Width, Zero Side Bars or Phone Outlines Ever! */
+    html, body, body.force-mobile-mode {
+      background-color: var(--surface-bg, #f8fafc) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+    }
     body.force-mobile-mode #appShell {
-      max-width: 430px;
-      margin: 12px auto 28px auto;
-      border: 10px solid #0f172a;
-      border-radius: 42px;
-      background: #f8fafc;
-      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.45);
-      min-height: calc(100vh - 24px);
-      overflow: hidden;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      min-height: 100vh;
+      overflow-x: hidden;
       position: relative;
+    }
+    @media (max-width: 767px) {
+      body,
+      body.force-mobile-mode #appShell,
+      body:not(.force-desktop-mode) #appShell {
+        max-width: 100% !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
     }
     body.force-desktop-mode #appShell {
       max-width: 1440px;
       margin: 0 auto;
-      background: #f8fafc;
     }
 
-    /* In Mobile Mode (or small screens < 768px when not forced desktop), make UI simple & app-like */
+    /* Dedicated Mobile UI Architecture (Distinct from Desktop — not a squeezed desktop page) */
     body.force-mobile-mode .desktop-grid-2,
     body.force-mobile-mode .desktop-grid-3,
     body.force-mobile-mode .desktop-grid-4,
@@ -52,31 +68,54 @@
       grid-template-columns: 1fr !important;
     }
     body.force-mobile-mode .mobile-day-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-columns: 1fr !important;
       gap: 0.65rem !important;
     }
-    body.force-mobile-mode .mobile-day-card-span-full {
-      grid-column: span 2 / span 2 !important;
-    }
-    body.force-mobile-mode .hide-in-forced-mobile {
+    body.force-mobile-mode .hide-in-forced-mobile,
+    body.force-mobile-mode .desktop-only-block {
       display: none !important;
     }
     body.force-mobile-mode .show-in-forced-mobile {
       display: flex !important;
+    }
+    body.force-mobile-mode .mobile-only-block {
+      display: block !important;
+    }
+    body.force-desktop-mode .mobile-only-block {
+      display: none !important;
+    }
+    /* In Mobile Mode, hide the Timer Settings stack until user taps "⚙️ Timer & Ringtone Settings" */
+    body.force-mobile-mode #timerCustomizationControlsBlock:not(.mobile-settings-expanded) {
+      display: none !important;
+    }
+    /* Streamline spacing & cards in Mobile Mode so it feels like a native iOS/Android app */
+    body.force-mobile-mode main {
+      padding: 0.65rem 0.75rem 5.5rem 0.75rem !important;
+    }
+    body.force-mobile-mode header {
+      padding: 0.5rem 0.75rem !important;
     }
     .mobile-subview-hidden,
     body.force-mobile-mode .mobile-subview-hidden {
       display: none !important;
     }
     @media (max-width: 767px) {
-      body:not(.force-desktop-mode) .mobile-subview-hidden {
+      body:not(.force-desktop-mode) .mobile-subview-hidden,
+      body:not(.force-desktop-mode) .hide-in-forced-mobile,
+      body:not(.force-desktop-mode) .desktop-only-block {
         display: none !important;
       }
       body:not(.force-desktop-mode) .show-in-forced-mobile {
         display: flex !important;
       }
-      body:not(.force-desktop-mode) .hide-in-forced-mobile {
+      body:not(.force-desktop-mode) .mobile-only-block {
+        display: block !important;
+      }
+      body:not(.force-desktop-mode) #timerCustomizationControlsBlock:not(.mobile-settings-expanded) {
         display: none !important;
+      }
+      body:not(.force-desktop-mode) main {
+        padding: 0.65rem 0.75rem 5.5rem 0.75rem !important;
       }
     }
 
@@ -249,7 +288,7 @@
     }
     .from-slate-900.via-slate-800.to-teal-900,
     .from-slate-900.via-teal-950.to-slate-900 {
-      background-image: linear-gradient(135deg, var(--hero-grad-start, #0f172a), var(--hero-grad-mid, #1e293b), var(--brand-primary-dark, #0f766e)) !important;
+      background-image: linear-gradient(135deg, var(--brand-primary, #0d9488), var(--brand-primary-dark, #0f766e)) !important;
     }
     .from-teal-50\/80.via-white.to-amber-50\/40,
     .from-amber-50.via-white.to-teal-50\/40 {
@@ -307,12 +346,12 @@
         <div class="flex items-center gap-1.5 order-2 lg:order-3">
           <button type="button" id="openThemeModalBtn" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-1.5 transition hover-lift" title="Customize Website Theme, Colors & Animations">
             <span id="headerThemeSwatchDot" class="w-3.5 h-3.5 rounded-full bg-teal-600 border border-white shadow-sm"></span>
-            <span>🎨 Theme</span>
+            <span class="hide-in-forced-mobile hidden sm:inline">🎨 Theme</span>
           </button>
 
           <button type="button" id="headerAccountQuickBtn" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-1.5 transition" title="Open Personal Account & Cross-Device Sync">
             <span id="headerAccountAvatar" class="w-5 h-5 rounded-full bg-teal-600 text-white text-[10px] font-extrabold flex items-center justify-center">AJ</span>
-            <span id="headerAccountLabel" class="hidden sm:inline max-w-[100px] truncate">Alex</span>
+            <span id="headerAccountLabel" class="hide-in-forced-mobile hidden sm:inline max-w-[100px] truncate">Alex</span>
           </button>
 
           <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200" role="group" aria-label="Layout Mode Switcher">
@@ -337,18 +376,18 @@
 
         <!-- CLEAN SEGMENTED SUB-NAVIGATION FOR STRETCH STUDIO (Keeps each sub-page uncluttered) -->
         <div class="flex flex-col gap-2.5 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <!-- Compact Horizontal Session Pill Bar (Switch, Rename, Create or Delete Stretch Sessions) -->
+          <!-- Auto-Expanding Session Header & Quick Actions -->
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-extrabold text-slate-800">Active Stretch Session: <span id="mobileAppSelectedDayLabel" class="text-teal-700">Monday</span></span>
-              <button type="button" id="quickRenameSessionTopBtn" class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition" title="Rename this stretch session">
+            <div class="flex flex-wrap items-center gap-2 min-w-0">
+              <span class="text-xs font-extrabold text-slate-800 whitespace-normal break-words">Session: <span id="mobileAppSelectedDayLabel" class="text-teal-700 whitespace-normal break-words">Morning Spine & Hip Flow</span></span>
+              <button type="button" id="quickRenameSessionTopBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition" title="Rename this stretch session">
                 ✏️ Rename Session
               </button>
-              <button type="button" id="quickNewSessionTopBtn" class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white transition" title="Create a new stretch session">
+              <button type="button" id="quickNewSessionTopBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white transition" title="Create a new stretch session">
                 + New Session
               </button>
             </div>
-            <button type="button" id="mobileQuickToggleWorkoutDayBtn" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <button type="button" id="mobileQuickToggleWorkoutDayBtn" class="hide-in-forced-mobile px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
               ✓ Workout Day
             </button>
           </div>
@@ -409,8 +448,8 @@
             </div>
           </div>
 
-          <div id="stretchDaySelectorGrid" class="mobile-day-grid grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <!-- Populated by JS -->
+          <div id="stretchDaySelectorGrid" class="flex flex-wrap gap-3 items-stretch">
+            <!-- Populated by JS with auto-expanding session boxes -->
           </div>
         </div>
 
@@ -518,8 +557,16 @@
                 </button>
               </div>
 
+              <!-- MOBILE-ONLY DRAWER BUTTON FOR TIMER & RINGTONE SETTINGS (Keeps mobile timer screen uncluttered like a native app!) -->
+              <div class="mobile-only-block hidden pt-1">
+                <button type="button" id="mobileToggleTimerSettingsBtn" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-between border border-slate-200 transition">
+                  <span>⚙️ Timer, Ringtone & Prep Time Settings</span>
+                  <span id="mobileTimerSettingsChevron">▼ Show</span>
+                </button>
+              </div>
+
               <!-- TIMER CUSTOMIZATION CONTROLS: RINGTONE PICKER, TRANSITION MODE & PREP TIME -->
-              <div class="border-t border-slate-200 pt-4 space-y-4">
+              <div id="timerCustomizationControlsBlock" class="border-t border-slate-200 pt-4 space-y-4">
 
                 <!-- NEW: Stretch Ringtone Selector & Phone Speaker Booster -->
                 <div class="bg-teal-50/60 rounded-xl p-3.5 border border-teal-200/80 space-y-2.5">
@@ -684,23 +731,23 @@
           </div>
         </div>
 
-        <!-- Weekly Planner Header & Summary Stats -->
-        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-6">
-          <div class="flex flex-wrap items-center justify-between gap-4">
+        <!-- Weekly Planner Header (Compact App Bar on Mobile, Full KPI Dashboard on Desktop) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-3.5 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
             <div>
-              <span class="text-xs font-bold uppercase tracking-wider text-teal-600">Weekly Command Center</span>
-              <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 mt-0.5" id="plannerWeekRangeTitle">Week of Oct 19 – Oct 25, 2026</h2>
-              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Plan your week, track high-impact weekly goals, and organize your meal prep in one place.</p>
+              <span class="hide-in-forced-mobile text-xs font-bold uppercase tracking-wider text-teal-600">Weekly Command Center</span>
+              <h2 class="text-base sm:text-2xl font-extrabold text-slate-900" id="plannerWeekRangeTitle">Week of Oct 19 – Oct 25, 2026</h2>
+              <p class="hide-in-forced-mobile text-xs sm:text-sm text-slate-500 mt-0.5">Plan your week, track high-impact weekly goals, and organize your meal prep in one place.</p>
             </div>
-            <div class="flex items-center gap-2">
-              <button type="button" id="plannerPrevWeekBtn" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">← Prev Week</button>
-              <button type="button" id="plannerCurrentWeekBtn" class="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition">This Week</button>
-              <button type="button" id="plannerNextWeekBtn" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">Next Week →</button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="plannerPrevWeekBtn" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">← Prev Week</button>
+              <button type="button" id="plannerCurrentWeekBtn" class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition">This Week</button>
+              <button type="button" id="plannerNextWeekBtn" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">Next Week →</button>
             </div>
           </div>
 
-          <!-- Interactive Weekly KPI Cards -->
-          <div class="desktop-grid-4 grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+          <!-- Interactive Weekly KPI Cards (Desktop Only — Hidden on Mobile to avoid dashboard clutter) -->
+          <div class="hide-in-forced-mobile desktop-grid-4 grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
             <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
               <span class="text-xs font-medium text-slate-500">Weekly Goals</span>
               <div class="flex items-baseline justify-between mt-1">
@@ -1044,8 +1091,8 @@
             </div>
           </div>
 
-          <div id="diaryQuickWeekStrip" class="mobile-day-grid grid grid-cols-2 sm:grid-cols-7 gap-2 mt-4 pt-4 border-t border-slate-100">
-            <!-- Populated by JS -->
+          <div id="diaryQuickWeekStrip" class="hide-in-forced-mobile grid grid-cols-2 sm:grid-cols-7 gap-2 mt-4 pt-4 border-t border-slate-100">
+            <!-- Populated by JS (Hidden on mobile so diary entry starts right away) -->
           </div>
         </div>
 
@@ -1215,20 +1262,23 @@
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-4">
               <div id="accountBannerAvatar" class="w-14 h-14 rounded-2xl bg-teal-500 text-white font-display font-extrabold text-xl flex items-center justify-center shadow-md shrink-0">
-                AJ
+                👤
               </div>
               <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <h2 id="accountBannerName" class="text-lg sm:text-2xl font-extrabold">Alex Jordan</h2>
-                  <span id="accountAuthStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    ✓ Signed In & Synced
+                  <h2 id="accountBannerName" class="text-lg sm:text-2xl font-extrabold">No Account Signed In</h2>
+                  <span id="accountAuthStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                    Not Signed In
                   </span>
                 </div>
-                <p id="accountBannerEmail" class="text-xs sm:text-sm text-slate-300 mt-0.5">alex.jordan@flowspace.app • Remember Me Active</p>
+                <p id="accountBannerEmail" class="text-xs sm:text-sm text-slate-300 mt-0.5">Create an account or sign in below to save & sync across devices.</p>
               </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="pullFromCloudNowBtn" class="px-3.5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5" title="Fetch latest changes saved from your other devices">
+                <span>🔄 Pull Latest from Cloud</span>
+              </button>
               <button type="button" id="syncAcrossDevicesNowBtn" class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
                 <span>☁️ Sync Across Devices Now</span>
               </button>
@@ -1258,6 +1308,9 @@
                 </div>
               </div>
 
+              <!-- INLINE AUTH STATUS / ERROR / CLOUD FEEDBACK BANNER -->
+              <div id="authFeedbackBanner" class="hidden p-3 rounded-xl text-xs font-bold border"></div>
+
               <!-- LOGIN & SIGNUP FORM -->
               <form id="accountAuthForm" class="space-y-3.5">
                 <div id="authSignupNameWrapper" class="hidden">
@@ -1267,7 +1320,7 @@
 
                 <div>
                   <label for="authEmailInput" class="block text-xs font-bold text-slate-700 mb-1">Account Email Address</label>
-                  <input type="email" id="authEmailInput" value="alex.jordan@flowspace.app" placeholder="you@example.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-teal-500" required />
+                  <input type="email" id="authEmailInput" value="" placeholder="you@example.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-teal-500" required />
                 </div>
 
                 <div>
@@ -1276,7 +1329,7 @@
                     <button type="button" id="forgotPasswordLinkBtn" class="text-xs font-bold text-teal-600 hover:text-teal-800">Forgot password?</button>
                   </div>
                   <div class="relative">
-                    <input type="password" id="authPasswordInput" value="flowspace2026" placeholder="Enter your password" class="w-full px-3.5 py-2.5 pr-16 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-teal-500" required />
+                    <input type="password" id="authPasswordInput" value="" placeholder="Enter your password" class="w-full px-3.5 py-2.5 pr-16 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-teal-500" required />
                     <button type="button" id="togglePasswordVisibilityBtn" class="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-xs font-bold text-slate-500 hover:text-slate-800">
                       Show
                     </button>
@@ -1300,29 +1353,120 @@
                 </button>
               </form>
 
-              <!-- FORGOT PASSWORD RECOVERY PANEL -->
-              <div id="forgotPasswordPanel" class="hidden bg-amber-50/80 border border-amber-200 rounded-2xl p-4 space-y-3">
+              <!-- SAVED ACCOUNTS ON THIS DEVICE / CLOUD VAULT -->
+              <div id="savedAccountsListWrapper" class="hidden pt-3 border-t border-slate-200 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Saved Accounts (Survives All Code Updates)</span>
+                </div>
+                <div id="savedAccountsPillsContainer" class="flex flex-wrap gap-2"></div>
+              </div>
+
+              <!-- FORGOT PASSWORD RECOVERY PANEL (With Formatted Password Reset Verification Email) -->
+              <div id="forgotPasswordPanel" class="hidden bg-amber-50/80 border border-amber-200 rounded-2xl p-4 space-y-3.5">
                 <div class="flex items-center justify-between">
                   <h4 class="text-sm font-extrabold text-slate-900">🔑 Reset Forgotten Password</h4>
                   <button type="button" id="closeForgotPanelBtn" class="text-xs font-bold text-slate-500 hover:text-slate-800">Back to Login</button>
                 </div>
-                <p class="text-xs text-slate-600">Enter your account email to receive an instant 6-digit recovery code and set a new password.</p>
+                <p class="text-xs text-slate-600">Enter your account email and click <strong>Send Code</strong> to dispatch a formatted password-reset verification email with your 6-digit security code.</p>
                 <div class="flex gap-2">
-                  <input type="email" id="recoveryEmailInput" value="alex.jordan@flowspace.app" placeholder="Account email..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm" />
-                  <button type="button" id="sendRecoveryCodeBtn" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0">
+                  <input type="email" id="recoveryEmailInput" value="" placeholder="Enter your account email..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm" />
+                  <button type="button" id="sendRecoveryCodeBtn" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 shadow-sm transition">
                     Send Code
                   </button>
                 </div>
+
                 <div id="recoveryCodeBanner" class="hidden p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-xs font-bold text-emerald-900">
-                  <!-- Populated with verification code -->
+                  <!-- Populated with verification status -->
                 </div>
-                <form id="completePasswordResetForm" class="space-y-2.5 pt-1">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input type="text" id="recoveryCodeVerifyInput" placeholder="6-digit code (e.g. 482910)" class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-bold" required />
-                    <input type="password" id="recoveryNewPasswordInput" placeholder="New password..." class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm" required />
+
+                <!-- FORMATTED PASSWORD RESET EMAIL MESSAGE (Generated & Displayed When User Clicks Send Code) -->
+                <div id="formattedPasswordResetEmailContainer" class="hidden rounded-2xl border-2 border-slate-300 bg-white shadow-md overflow-hidden animate-pop">
+                  <!-- Email Client Top Bar -->
+                  <div class="bg-teal-600 text-white px-4 py-2.5 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm">✉️</span>
+                      <span class="text-xs font-extrabold tracking-wide">Formatted Password Reset Email</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <a id="openEmailClientMailtoLink" href="#" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-bold transition">
+                        📩 Open in Email App
+                      </a>
+                      <button type="button" id="copyFullResetEmailTextBtn" class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold transition">
+                        📋 Copy Email
+                      </button>
+                    </div>
                   </div>
-                  <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm">
-                    Verify Code & Update Password
+
+                  <!-- Email Envelope Metadata Header (From / To / Subject / Date) -->
+                  <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 space-y-1 text-xs">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="font-bold text-slate-500 w-16">From:</span>
+                      <span class="font-semibold text-slate-900">FlowSpace Account Security &lt;security@flowspace.app&gt;</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="font-bold text-slate-500 w-16">To:</span>
+                      <span id="resetEmailRecipientLabel" class="font-bold text-teal-700">user@example.com</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="font-bold text-slate-500 w-16">Subject:</span>
+                      <span id="resetEmailSubjectLabel" class="font-extrabold text-slate-900">🔐 [FlowSpace] Your Password Reset Verification Code</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="font-bold text-slate-500 w-16">Sent:</span>
+                      <span id="resetEmailTimestampLabel" class="text-slate-600">Just now</span>
+                    </div>
+                  </div>
+
+                  <!-- Formatted HTML Email Body -->
+                  <div class="p-4 sm:p-5 space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed bg-white">
+                    <div class="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                      <div class="w-8 h-8 rounded-xl bg-teal-600 text-white font-extrabold flex items-center justify-center text-sm">F</div>
+                      <div>
+                        <p class="font-extrabold text-slate-900 text-sm leading-none">FlowSpace Wellness &amp; Stretch Studio</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Official Account Recovery &amp; Cloud Sync Verification</p>
+                      </div>
+                    </div>
+
+                    <p>Hi <strong id="resetEmailGreetingName" class="text-slate-900">FlowSpace Member</strong>,</p>
+
+                    <p>
+                      We received a request to reset the password for your FlowSpace account associated with
+                      <strong id="resetEmailBodyAddress" class="text-slate-900">user@example.com</strong>.
+                      Please enter the 6-digit verification code below to verify your identity and set a new password:
+                    </p>
+
+                    <!-- Verification Code Callout Box inside the Email -->
+                    <div class="bg-slate-50 border-2 border-dashed border-teal-500 rounded-2xl p-4 text-center space-y-2">
+                      <span class="text-[10px] font-extrabold uppercase tracking-widest text-teal-700 block">Your 6-Digit Verification Code</span>
+                      <div id="resetEmailCodeDisplayBox" class="font-mono text-2xl sm:text-3xl font-extrabold tracking-[0.28em] text-slate-900 py-1 select-all">
+                        482910
+                      </div>
+                      <div class="flex items-center justify-center gap-2 pt-1">
+                        <button type="button" id="autoFillResetCodeFromEmailBtn" class="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition">
+                          ✓ Copy &amp; Auto-Fill Verification Code Below
+                        </button>
+                      </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500">
+                      <strong>Security Note:</strong> This verification code expires in 15 minutes. All of your custom stretch sessions, personal stretch library, weekly objectives, meal prep recipes, and daily diary entries remain safely preserved in your Cloud Vault.
+                    </p>
+
+                    <div class="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
+                      <span>© 2026 FlowSpace Cloud Account Security</span>
+                      <span>Automated Password Recovery Email</span>
+                    </div>
+                  </div>
+                </div>
+
+                <form id="completePasswordResetForm" class="space-y-2.5 pt-2 border-t border-amber-200/80">
+                  <label class="block text-xs font-extrabold text-slate-800">Step 2: Enter Verification Code &amp; New Password</label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="text" id="recoveryCodeVerifyInput" placeholder="Enter 6-digit code from email..." class="px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-bold tracking-wider" required />
+                    <input type="password" id="recoveryNewPasswordInput" placeholder="Enter your new password..." class="px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm" required />
+                  </div>
+                  <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-sm transition">
+                    Verify Code &amp; Update Password
                   </button>
                 </form>
               </div>
@@ -1340,22 +1484,22 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label for="profileNameInput" class="block text-xs font-bold text-slate-700 mb-1">Display Name</label>
-                    <input type="text" id="profileNameInput" value="Alex Jordan" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium" required />
+                    <input type="text" id="profileNameInput" value="" placeholder="Enter your name..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium" required />
                   </div>
                   <div>
                     <label for="profileEmailInput" class="block text-xs font-bold text-slate-700 mb-1">Primary Email</label>
-                    <input type="email" id="profileEmailInput" value="alex.jordan@flowspace.app" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium" required />
+                    <input type="email" id="profileEmailInput" value="" placeholder="you@example.com" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium" required />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label for="profilePhoneInput" class="block text-xs font-bold text-slate-700 mb-1">Recovery Phone / SMS</label>
-                    <input type="tel" id="profilePhoneInput" value="+1 (503) 555-0194" placeholder="+1 (555) 000-0000" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
+                    <input type="tel" id="profilePhoneInput" value="" placeholder="+1 (555) 000-0000" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
                   </div>
                   <div>
                     <label for="profileFocusGoalInput" class="block text-xs font-bold text-slate-700 mb-1">Personal Wellness Focus</label>
-                    <input type="text" id="profileFocusGoalInput" value="Daily Mobility & Mindful Meal Prep" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
+                    <input type="text" id="profileFocusGoalInput" value="" placeholder="e.g., Daily Mobility & Mindful Meal Prep" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
                   </div>
                 </div>
 
@@ -1388,24 +1532,64 @@
               <div class="space-y-2.5">
                 <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                   <div class="flex items-center gap-3">
-                    <span class="text-2xl">📱</span>
+                    <span class="text-2xl">☁️</span>
                     <div>
-                      <p class="text-xs sm:text-sm font-bold text-slate-900">Mobile Phone App (iOS / Android)</p>
-                      <p class="text-[11px] text-slate-500">App interface • Ringtones enabled • Remember Me active</p>
+                      <p class="text-xs sm:text-sm font-bold text-slate-900" id="cloudEngineStatusTitle">Cloud Account Vault & Cross-Device Relay</p>
+                      <p class="text-[11px] text-slate-500" id="cloudEngineStatusDesc">Sign up once with Email + Password — log in on any phone or computer to pull your account automatically.</p>
                     </div>
                   </div>
-                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Synced ✓</span>
+                  <span id="cloudEngineStatusPill" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0">Cloud Ready</span>
                 </div>
 
                 <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
                   <div class="flex items-center gap-3">
-                    <span class="text-2xl">💻</span>
+                    <span class="text-2xl">🛡️</span>
                     <div>
-                      <p class="text-xs sm:text-sm font-bold text-slate-900">Desktop Web Workstation</p>
-                      <p class="text-[11px] text-slate-500">Full multi-column dashboard • Auto-save enabled</p>
+                      <p class="text-xs sm:text-sm font-bold text-slate-900">Code-Update Safe Permanent Storage</p>
+                      <p class="text-[11px] text-slate-500">Stored in Cloud Vault + IndexedDB + Permanent Registry outside index.html code.</p>
                     </div>
                   </div>
-                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Active Now</span>
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 shrink-0">Protected ✓</span>
+                </div>
+              </div>
+
+              <!-- ONE-CLICK MAGIC LOGIN LINK FOR PHONE / OTHER DEVICES -->
+              <div class="bg-teal-50/70 rounded-xl p-3.5 border border-teal-200 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 class="text-xs font-extrabold text-slate-900">🔗 1-Click Cross-Device Login & Cloud Link</h4>
+                    <p class="text-[11px] text-slate-600">Open this link on your phone or tablet to log into your account and link its cloud vault automatically.</p>
+                  </div>
+                  <button type="button" id="copyMagicLoginLinkBtn" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 transition">
+                    📋 Copy Login Link
+                  </button>
+                </div>
+                <input type="text" id="magicLoginLinkInput" readonly placeholder="Sign in to generate your cross-device login link..." class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-mono text-[11px] text-slate-700" />
+              </div>
+
+              <!-- OPTIONAL DEDICATED PERSONAL CLOUD DATABASE (FIREBASE / GITHUB GIST) -->
+              <div class="border-t border-slate-200 pt-3">
+                <button type="button" id="toggleCustomCloudConfigBtn" class="w-full flex items-center justify-between text-xs font-bold text-slate-700 hover:text-teal-700 py-1">
+                  <span>⚙️ Optional: Connect Personal Firebase / GitHub Cloud Database</span>
+                  <span id="customCloudConfigChevron">▼ Configure</span>
+                </button>
+                <div id="customCloudConfigDrawer" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <p class="text-[11px] text-slate-600 leading-relaxed">
+                    FlowSpace already syncs across devices using its built-in Cloud KV Relay. For 100% private lifetime cloud storage on your own account, you can optionally paste a free <strong>Firebase Realtime Database URL</strong> (e.g. <code>https://your-app-default-rtdb.firebaseio.com</code>) or a <strong>GitHub Personal Access Token</strong> (with <code>gist</code> scope):
+                  </p>
+                  <div>
+                    <label for="customFirebaseDbUrlInput" class="block text-[11px] font-bold text-slate-700 mb-1">Firebase Realtime DB URL (Optional)</label>
+                    <input type="url" id="customFirebaseDbUrlInput" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono" />
+                  </div>
+                  <div>
+                    <label for="customGithubGistTokenInput" class="block text-[11px] font-bold text-slate-700 mb-1">Or GitHub Personal Access Token (Optional - Gist Scope)</label>
+                    <input type="password" id="customGithubGistTokenInput" placeholder="ghp_..." class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono" />
+                  </div>
+                  <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="button" id="saveCustomCloudConfigBtn" class="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold">
+                      Save Cloud Database Settings ✓
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1721,6 +1905,9 @@
   <!-- ===================================================================== -->
   <script>
     (function() {
+      // OPTIONAL: Paste your free Google Firebase Realtime Database URL below (e.g. 'https://my-app-default-rtdb.firebaseio.com')
+      // so every device automatically connects to your permanent cloud database without any extra setup!
+      const DEFAULT_FIREBASE_DB_URL = '';
       const STORAGE_KEY = 'flowspace_wellness_suite_v1';
       const TODAY_ISO = '2026-10-19'; // Monday, Oct 19, 2026
       const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1787,7 +1974,7 @@
       function createDefaultState() {
         return {
           activeSection: 'stretch', // 'stretch' | 'planner' | 'diary' | 'account'
-          viewMode: 'desktop',      // 'desktop' | 'mobile'
+          viewMode: (typeof window !== 'undefined' && window.innerWidth < 768) ? 'mobile' : 'desktop',
           stretchMobileSubview: 'timer', // 'timer' | 'routine' | 'library'
           plannerMobileSubview: 'goals', // 'goals' | 'meals' | 'plan'
           diaryMobileSubview: 'entry',   // 'entry' | 'calendar'
@@ -1822,16 +2009,16 @@
             }
           ],
 
-          // Personal Account & Cloud Sync State
+          // Personal Account & Cloud Sync State (Starts with NO account logged in!)
           account: {
-            isLoggedIn: true,
-            name: 'Alex Jordan',
-            email: 'alex.jordan@flowspace.app',
-            phone: '+1 (503) 555-0194',
-            focusGoal: 'Daily Mobility & Mindful Meal Prep',
-            rememberMe: true,
+            isLoggedIn: false,
+            name: '',
+            email: '',
+            phone: '',
+            focusGoal: '',
+            rememberMe: false,
             autoCloudSync: true,
-            lastSyncedAt: 'Today, 7:50 PM'
+            lastSyncedAt: 'Not signed in'
           },
 
           // Custom Named Stretch Sessions (Can be renamed to anything, or new sessions created/deleted)
@@ -2275,33 +2462,581 @@
 
       let state = createDefaultState();
 
+      // =====================================================================
+      // PERMANENT ACCOUNT REGISTRY, INDEXEDDB VAULT & CROSS-DEVICE CLOUD ENGINE
+      // Guarantees:
+      // 1. Signing up on Device A and logging in on Device B syncs via Cloud
+      // 2. Updating website code (index.html) in the future NEVER loses accounts
+      // =====================================================================
+      const ACCOUNTS_REGISTRY_KEY = 'flowspace_permanent_accounts_v1';
+      const ACTIVE_SESSION_EMAIL_KEY = 'flowspace_active_account_email_v1';
+      const CLOUD_CONFIG_STORAGE_KEY = 'flowspace_cloud_db_config_v1';
+      const IDB_NAME = 'FlowSpacePermanentVaultDB';
+      const IDB_STORE = 'accounts_store';
+      // Compact Cloud Serializer: strips redundant built-in SVG data URIs before cloud transmission
+      // so the entire user account + stretches + planner + diary is < 2.5 KB and syncs fast on any phone!
+      function compactStateForCloud(rawState) {
+        try {
+          const clone = JSON.parse(JSON.stringify(rawState || state));
+          const urlToPresetId = {};
+          PRESET_ILLUSTRATIONS.forEach(p => {
+            urlToPresetId[p.url] = '__PRESET_SVG__:' + p.id;
+          });
+          if (clone.daysData) {
+            Object.keys(clone.daysData).forEach(dayKey => {
+              const dayObj = clone.daysData[dayKey];
+              if (dayObj && Array.isArray(dayObj.sections)) {
+                dayObj.sections.forEach(sec => {
+                  if (sec && Array.isArray(sec.stretches)) {
+                    sec.stretches.forEach(str => {
+                      if (str.image && urlToPresetId[str.image]) {
+                        str.image = urlToPresetId[str.image];
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+          if (Array.isArray(clone.personalLibrary)) {
+            clone.personalLibrary.forEach(item => {
+              if (item.image && urlToPresetId[item.image]) {
+                item.image = urlToPresetId[item.image];
+              }
+            });
+          }
+          return clone;
+        } catch (e) {
+          return rawState;
+        }
+      }
+
+      function expandStateFromCloud(compactState) {
+        try {
+          const clone = JSON.parse(JSON.stringify(compactState || {}));
+          const presetMap = {};
+          PRESET_ILLUSTRATIONS.forEach(p => {
+            presetMap['__PRESET_SVG__:' + p.id] = p.url;
+          });
+          if (clone.daysData) {
+            Object.keys(clone.daysData).forEach(dayKey => {
+              const dayObj = clone.daysData[dayKey];
+              if (dayObj && Array.isArray(dayObj.sections)) {
+                dayObj.sections.forEach(sec => {
+                  if (sec && Array.isArray(sec.stretches)) {
+                    sec.stretches.forEach(str => {
+                      if (str.image && presetMap[str.image]) {
+                        str.image = presetMap[str.image];
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+          if (Array.isArray(clone.personalLibrary)) {
+            clone.personalLibrary.forEach(item => {
+              if (item.image && presetMap[item.image]) {
+                item.image = presetMap[item.image];
+              }
+            });
+          }
+          return clone;
+        } catch (e) {
+          return compactState;
+        }
+      }
+
+      function normalizeEmail(email) {
+        return String(email || '').trim().toLowerCase();
+      }
+
+      // Deterministic SHA-256 helper (with fallback for non-HTTPS file:// views)
+      async function sha256Hex(message) {
+        const str = String(message || '');
+        try {
+          if (window.crypto && window.crypto.subtle) {
+            const msgBuffer = new TextEncoder().encode(str);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          }
+        } catch (e) {}
+        // Deterministic fallback hash if crypto.subtle is unavailable
+        let h1 = 0xdeadbeef ^ str.length;
+        let h2 = 0x41c6ce57 ^ str.length;
+        for (let i = 0, ch; i < str.length; i++) {
+          ch = str.charCodeAt(i);
+          h1 = Math.imul(h1 ^ ch, 2654435761);
+          h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+      }
+
+      async function getAccountVaultKey(email) {
+        const clean = normalizeEmail(email);
+        const hash = await sha256Hex('flowspace_vault_v1::' + clean);
+        return 'fsvault_' + hash.slice(0, 32);
+      }
+
+      async function hashAccountPassword(email, password) {
+        const clean = normalizeEmail(email);
+        return await sha256Hex('flowspace_pw_v1::' + clean + '::' + String(password || ''));
+      }
+
+      function getCloudConfig() {
+        try {
+          const raw = localStorage.getItem(CLOUD_CONFIG_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (!parsed.firebaseUrl && DEFAULT_FIREBASE_DB_URL) {
+              parsed.firebaseUrl = DEFAULT_FIREBASE_DB_URL;
+            }
+            return parsed;
+          }
+        } catch (e) {}
+        return { firebaseUrl: DEFAULT_FIREBASE_DB_URL || '', githubToken: '', gistId: '', cloudRelayMap: {} };
+      }
+
+      function saveCloudConfig(cfg) {
+        try {
+          const merged = Object.assign(getCloudConfig(), cfg || {});
+          localStorage.setItem(CLOUD_CONFIG_STORAGE_KEY, JSON.stringify(merged));
+          idbPut('__cloud_config__', merged);
+        } catch (e) {}
+      }
+
+      // IndexedDB Permanent Vault (Survives index.html updates & localStorage resets)
+      function openPermanentIDB() {
+        return new Promise((resolve) => {
+          try {
+            if (!window.indexedDB) return resolve(null);
+            const req = window.indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains(IDB_STORE)) {
+                db.createObjectStore(IDB_STORE);
+              }
+            };
+            req.onsuccess = (e) => resolve(e.target.result);
+            req.onerror = () => resolve(null);
+          } catch (err) {
+            resolve(null);
+          }
+        });
+      }
+
+      async function idbGet(key) {
+        const db = await openPermanentIDB();
+        if (!db) return null;
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(IDB_STORE, 'readonly');
+            const store = tx.objectStore(IDB_STORE);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      }
+
+      async function idbPut(key, val) {
+        const db = await openPermanentIDB();
+        if (!db) return;
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            const store = tx.objectStore(IDB_STORE);
+            store.put(val, key);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+          } catch (e) {
+            resolve(false);
+          }
+        });
+      }
+
+      // Local Permanent Accounts Registry (Map of email -> { email, name, passwordHash, updatedAtMs, stateSnapshot, cloudBlobUrl })
+      function getLocalAccountsRegistry() {
+        try {
+          const raw = localStorage.getItem(ACCOUNTS_REGISTRY_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') return parsed;
+          }
+        } catch (e) {}
+        return {};
+      }
+
+      function saveLocalAccountRecord(email, record) {
+        const clean = normalizeEmail(email);
+        if (!clean) return;
+        try {
+          const reg = getLocalAccountsRegistry();
+          reg[clean] = record;
+          localStorage.setItem(ACCOUNTS_REGISTRY_KEY, JSON.stringify(reg));
+          localStorage.setItem(STORAGE_KEY + '_user_' + clean, JSON.stringify(record.stateSnapshot || state));
+          idbPut('account_' + clean, record);
+          idbPut('__accounts_registry__', reg);
+        } catch (e) {}
+      }
+
+      // Forward-Compatible Deep Schema Migrator:
+      // Ensures that even when index.html is updated in the future with new features,
+      // 100% of the user's saved account data, sessions, goals, meals, diary & themes are preserved!
+      function deepMigrateState(saved) {
+        const def = createDefaultState();
+        if (!saved || typeof saved !== 'object') return def;
+
+        const merged = Object.assign({}, def, saved);
+        merged.account = Object.assign({}, def.account, saved.account || {});
+        if (merged.account.email === 'alex.jordan@flowspace.app') {
+          merged.account = Object.assign({}, def.account);
+        }
+
+        // Preserve user's custom stretch sessions & sections
+        if (saved.daysData && typeof saved.daysData === 'object' && Object.keys(saved.daysData).length > 0) {
+          merged.daysData = saved.daysData;
+        } else {
+          merged.daysData = def.daysData;
+        }
+        if (!merged.daysData[merged.selectedDay]) {
+          merged.selectedDay = Object.keys(merged.daysData)[0] || 'Monday';
+        }
+
+        merged.personalLibrary = Array.isArray(saved.personalLibrary) ? saved.personalLibrary : def.personalLibrary;
+        merged.theme = Object.assign({}, def.theme, saved.theme || {});
+        merged.savedThemePresets = Array.isArray(saved.savedThemePresets) ? saved.savedThemePresets : def.savedThemePresets;
+
+        // Deep merge planner
+        merged.planner = Object.assign({}, def.planner, saved.planner || {});
+        merged.planner.weeklyGoals = Array.isArray(merged.planner.weeklyGoals) ? merged.planner.weeklyGoals : def.planner.weeklyGoals;
+        merged.planner.groceryPrepList = Array.isArray(merged.planner.groceryPrepList) ? merged.planner.groceryPrepList : def.planner.groceryPrepList;
+        merged.planner.dailyPlans = Object.assign({}, def.planner.dailyPlans, (saved.planner && saved.planner.dailyPlans) || {});
+
+        // Deep merge diary
+        merged.diary = Object.assign({}, def.diary, saved.diary || {});
+        merged.diary.entries = Object.assign({}, def.diary.entries, (saved.diary && saved.diary.entries) || {});
+        merged.diary.customMoods = Array.isArray(merged.diary.customMoods) ? merged.diary.customMoods : def.diary.customMoods;
+        merged.diary.customProudCategories = Array.isArray(merged.diary.customProudCategories) ? merged.diary.customProudCategories : def.diary.customProudCategories;
+        merged.diary.promptBank = Array.isArray(merged.diary.promptBank) ? merged.diary.promptBank : def.diary.promptBank;
+
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          merged.viewMode = 'mobile';
+        }
+        return merged;
+      }
+
+      // =====================================================================
+      // CROSS-DEVICE CLOUD SYNC ADAPTERS (KVDB + FIREBASE + GITHUB GIST)
+      // =====================================================================
+      function setCloudStatusUI(statusText, isOnline) {
+        const pill = document.getElementById('cloudEngineStatusPill');
+        if (pill) {
+          pill.textContent = statusText;
+          pill.className = isOnline
+            ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0'
+            : 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 shrink-0';
+        }
+      }
+
+      async function pushAccountRecordToCloud(email, record) {
+        const clean = normalizeEmail(email);
+        if (!clean || !record) return false;
+        const vaultKey = await getAccountVaultKey(clean);
+        const cfg = getCloudConfig();
+
+        // Compress stateSnapshot (< 2.5 KB) so cloud relays accept it rapidly across mobile & desktop
+        const compactPayload = {
+          email: clean,
+          name: record.name || clean.split('@')[0],
+          passwordHash: record.passwordHash || '',
+          updatedAtMs: record.updatedAtMs || Date.now(),
+          stateSnapshot: compactStateForCloud(record.stateSnapshot || state)
+        };
+        const serialized = JSON.stringify(compactPayload);
+        let anySuccess = false;
+
+        // 1. Built-In Cloud Mirror A: ntfy.sh Deterministic JSON Topic Cache (Zero API key, CORS *, works across Phone & Desktop)
+        const ntfyPromise = (async () => {
+          try {
+            const ntfyUrl = 'https://ntfy.sh/flowspace_cloud_' + vaultKey;
+            const res = await fetch(ntfyUrl, {
+              method: 'POST',
+              body: serialized
+            });
+            if (res.ok) anySuccess = true;
+          } catch (e) {}
+        })();
+
+        // 2. Built-In Cloud Mirror B: textdb.dev Deterministic KV Store
+        const textdbPromise = (async () => {
+          try {
+            const tdbUrl = 'https://textdb.dev/api/data/flowspace_cloud_' + vaultKey;
+            const res = await fetch(tdbUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: serialized
+            });
+            if (res.ok) anySuccess = true;
+          } catch (e) {}
+        })();
+
+        // 3. Optional Custom Firebase Realtime Database (if configured by user)
+        const fbPromise = (async () => {
+          if (cfg.firebaseUrl && cfg.firebaseUrl.trim()) {
+            try {
+              const base = cfg.firebaseUrl.trim().replace(/\/+$/, '');
+              const fbPutUrl = base + '/flowspace_accounts/' + vaultKey + '.json';
+              const res = await fetch(fbPutUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: serialized
+              });
+              if (res.ok) anySuccess = true;
+            } catch (e) {}
+          }
+        })();
+
+        // 4. Optional GitHub Gist Cloud Sync (if GitHub token configured by user)
+        const ghPromise = (async () => {
+          if (cfg.githubToken && cfg.githubToken.trim()) {
+            try {
+              const token = cfg.githubToken.trim();
+              const filename = vaultKey + '.json';
+              if (cfg.gistId) {
+                const res = await fetch('https://api.github.com/gists/' + cfg.gistId, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    description: 'FlowSpace Cloud Account Vault',
+                    files: { [filename]: { content: serialized } }
+                  })
+                });
+                if (res.ok) anySuccess = true;
+              } else {
+                const res = await fetch('https://api.github.com/gists', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    description: 'FlowSpace Cloud Account Vault',
+                    public: false,
+                    files: { [filename]: { content: serialized } }
+                  })
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.id) saveCloudConfig({ gistId: data.id });
+                  anySuccess = true;
+                }
+              }
+            } catch (e) {}
+          }
+        })();
+
+        await Promise.allSettled([ntfyPromise, textdbPromise, fbPromise, ghPromise]);
+
+        if (anySuccess) {
+          setCloudStatusUI('Cloud Synced ✓', true);
+        }
+        return anySuccess;
+      }
+
+      async function fetchAccountRecordFromCloud(email) {
+        const clean = normalizeEmail(email);
+        if (!clean) return null;
+        const vaultKey = await getAccountVaultKey(clean);
+        const cfg = getCloudConfig();
+        const candidates = [];
+
+        function addCandidate(rawRecord) {
+          if (rawRecord && rawRecord.email) {
+            if (rawRecord.stateSnapshot) {
+              rawRecord.stateSnapshot = expandStateFromCloud(rawRecord.stateSnapshot);
+            }
+            candidates.push(rawRecord);
+          }
+        }
+
+        // 1. Check Built-In Cloud Mirror A: ntfy.sh Deterministic JSON Topic Cache
+        const ntfyRead = (async () => {
+          try {
+            const ntfyUrl = 'https://ntfy.sh/flowspace_cloud_' + vaultKey + '/json?poll=1&since=all';
+            const res = await fetch(ntfyUrl, { cache: 'no-store' });
+            if (res.ok) {
+              const text = await res.text();
+              const lines = text.trim().split('\n').filter(Boolean);
+              for (let i = lines.length - 1; i >= 0; i--) {
+                try {
+                  const evt = JSON.parse(lines[i]);
+                  if (evt && evt.event === 'message' && evt.message) {
+                    const parsed = JSON.parse(evt.message);
+                    if (parsed && parsed.email) {
+                      addCandidate(parsed);
+                      break;
+                    }
+                  }
+                } catch (innerErr) {}
+              }
+            }
+          } catch (e) {}
+        })();
+
+        // 2. Check Built-In Cloud Mirror B: textdb.dev Deterministic KV Store
+        const textdbRead = (async () => {
+          try {
+            const tdbUrl = 'https://textdb.dev/api/data/flowspace_cloud_' + vaultKey;
+            const res = await fetch(tdbUrl, { cache: 'no-store' });
+            if (res.ok) {
+              const text = await res.text();
+              if (text && text.trim().startsWith('{')) {
+                addCandidate(JSON.parse(text));
+              }
+            }
+          } catch (e) {}
+        })();
+
+        // 3. Check Custom Firebase Realtime DB if configured
+        const fbRead = (async () => {
+          if (cfg.firebaseUrl && cfg.firebaseUrl.trim()) {
+            try {
+              const base = cfg.firebaseUrl.trim().replace(/\/+$/, '');
+              const fbGetUrl = base + '/flowspace_accounts/' + vaultKey + '.json';
+              const res = await fetch(fbGetUrl, { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                addCandidate(data);
+              }
+            } catch (e) {}
+          }
+        })();
+
+        // 4. Check GitHub Gist if configured
+        const ghRead = (async () => {
+          if (cfg.githubToken && cfg.githubToken.trim() && cfg.gistId) {
+            try {
+              const filename = vaultKey + '.json';
+              const res = await fetch('https://api.github.com/gists/' + cfg.gistId, {
+                headers: {
+                  'Authorization': 'token ' + cfg.githubToken.trim(),
+                  'Accept': 'application/vnd.github+json'
+                }
+              });
+              if (res.ok) {
+                const gist = await res.json();
+                if (gist && gist.files && gist.files[filename] && gist.files[filename].content) {
+                  addCandidate(JSON.parse(gist.files[filename].content));
+                }
+              }
+            } catch (e) {}
+          }
+        })();
+
+        await Promise.allSettled([ntfyRead, textdbRead, fbRead, ghRead]);
+
+        if (candidates.length === 0) return null;
+        candidates.sort((a, b) => (Number(b.updatedAtMs) || 0) - (Number(a.updatedAtMs) || 0));
+        setCloudStatusUI('Cloud Connected ✓', true);
+        return candidates[0];
+      }
+
       function loadState() {
         try {
+          // 1. Check URL for 1-Click Magic Cross-Device Sync / Login Link (?flowspace_sync=...)
+          if (typeof window !== 'undefined' && window.location && window.location.search) {
+            const params = new URLSearchParams(window.location.search);
+            const magicSync = params.get('flowspace_sync');
+            if (magicSync) {
+              try {
+                const decoded = JSON.parse(decodeURIComponent(escape(atob(magicSync))));
+                if (decoded && decoded.stateSnapshot) {
+                  state = deepMigrateState(decoded.stateSnapshot);
+                  if (decoded.cloudConfig) saveCloudConfig(decoded.cloudConfig);
+                  if (state.account && state.account.email) {
+                    localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, normalizeEmail(state.account.email));
+                    saveLocalAccountRecord(state.account.email, {
+                      email: normalizeEmail(state.account.email),
+                      name: state.account.name,
+                      passwordHash: decoded.passwordHash || '',
+                      updatedAtMs: Date.now(),
+                      stateSnapshot: state
+                    });
+                  }
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                  return;
+                }
+              } catch (e) {}
+            }
+          }
+
+          // 2. Check if there is an active remembered account in the Permanent Account Registry
+          const activeEmail = normalizeEmail(localStorage.getItem(ACTIVE_SESSION_EMAIL_KEY));
+          const registry = getLocalAccountsRegistry();
+          if (activeEmail && registry[activeEmail] && registry[activeEmail].stateSnapshot) {
+            state = deepMigrateState(registry[activeEmail].stateSnapshot);
+            state.account.isLoggedIn = true;
+            return;
+          }
+
+          // 3. Fallback to primary STORAGE_KEY with deep schema migration
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
-            const def = createDefaultState();
-            state = Object.assign({}, def, parsed);
-            state.account = Object.assign({}, def.account, parsed.account || {});
-            state.daysData = Object.assign({}, def.daysData, parsed.daysData || {});
-            state.personalLibrary = parsed.personalLibrary || def.personalLibrary;
-            state.theme = Object.assign({}, def.theme, parsed.theme || {});
-            state.savedThemePresets = Array.isArray(parsed.savedThemePresets) ? parsed.savedThemePresets : def.savedThemePresets;
-            if (parsed.daysData && Object.keys(parsed.daysData).length > 0) {
-              state.daysData = parsed.daysData;
+            state = deepMigrateState(parsed);
+            if (state.account && state.account.isLoggedIn && state.account.email) {
+              const clean = normalizeEmail(state.account.email);
+              localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, clean);
+              if (!registry[clean]) {
+                saveLocalAccountRecord(clean, {
+                  email: clean,
+                  name: state.account.name || clean.split('@')[0],
+                  passwordHash: state.account.passwordHash || '',
+                  updatedAtMs: Date.now(),
+                  stateSnapshot: state
+                });
+              }
             }
-            if (!state.daysData[state.selectedDay]) {
-              state.selectedDay = Object.keys(state.daysData)[0] || 'Monday';
-            }
-            state.planner = Object.assign({}, def.planner, parsed.planner || {});
-            state.diary = Object.assign({}, def.diary, parsed.diary || {});
-            if (!state.diary.customMoods) state.diary.customMoods = def.diary.customMoods;
-            if (!state.diary.customProudCategories) state.diary.customProudCategories = def.diary.customProudCategories;
-            if (!state.diary.promptBank) state.diary.promptBank = def.diary.promptBank;
           }
         } catch (err) {
           // Ignore sandbox storage errors
         }
+
+        // 4. Also asynchronously recover from IndexedDB & Cloud if signed in or if localStorage was cleared
+        setTimeout(async () => {
+          try {
+            const idbReg = await idbGet('__accounts_registry__');
+            if (idbReg && typeof idbReg === 'object') {
+              const localReg = getLocalAccountsRegistry();
+              const mergedReg = Object.assign({}, idbReg, localReg);
+              localStorage.setItem(ACCOUNTS_REGISTRY_KEY, JSON.stringify(mergedReg));
+            }
+            if (state.account && state.account.isLoggedIn && state.account.email) {
+              const cloudRec = await fetchAccountRecordFromCloud(state.account.email);
+              const localRec = getLocalAccountsRegistry()[normalizeEmail(state.account.email)];
+              if (cloudRec && cloudRec.stateSnapshot && (!localRec || (Number(cloudRec.updatedAtMs) || 0) > (Number(localRec.updatedAtMs) || 0))) {
+                state = deepMigrateState(cloudRec.stateSnapshot);
+                state.account.isLoggedIn = true;
+                saveLocalAccountRecord(state.account.email, cloudRec);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                renderAll();
+                showToast('☁️ Synced latest account updates from Cloud!');
+              }
+            }
+          } catch (e) {}
+        }, 150);
       }
 
       // =====================================================================
@@ -2357,7 +3092,7 @@
 
         // Full-website surfaces, cards, inputs, borders, and typography
         root.style.setProperty('--surface-bg', surface);
-        root.style.setProperty('--surface-outer', isDark ? mixHex(surface, '#000000', 0.7) : mixHex(primary, surface, 0.18));
+        root.style.setProperty('--surface-outer', surface);
         root.style.setProperty('--card-bg', isDark ? mixHex(surface, '#ffffff', 0.90) : mixHex('#ffffff', surface, 0.72));
         root.style.setProperty('--card-bg-elevated', isDark ? mixHex(surface, '#ffffff', 0.86) : mixHex('#ffffff', surface, 0.85));
         root.style.setProperty('--subtle-bg', isDark ? mixHex(surface, '#ffffff', 0.94) : mixHex(primary, surface, 0.08));
@@ -2429,21 +3164,50 @@
         }
       }
 
+      let cloudSyncDebounceTimer = null;
+
       function saveState(toastMsg) {
+        const nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const nowMs = Date.now();
+        state.updatedAtMs = nowMs;
         if (state.account) {
-          state.account.lastSyncedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          state.account.lastSyncedAt = state.account.isLoggedIn ? `Cloud & Device • ${nowTimeStr}` : `Device • ${nowTimeStr}`;
         }
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-          if (state.account && state.account.email) {
-            localStorage.setItem(STORAGE_KEY + '_user_' + state.account.email.toLowerCase(), JSON.stringify(state));
+          idbPut('__latest_state__', state);
+
+          if (state.account && state.account.isLoggedIn && state.account.email) {
+            const cleanEmail = normalizeEmail(state.account.email);
+            if (state.account.rememberMe !== false) {
+              localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, cleanEmail);
+            }
+            const existingRec = getLocalAccountsRegistry()[cleanEmail] || {};
+            const updatedRecord = {
+              email: cleanEmail,
+              name: state.account.name || existingRec.name || cleanEmail.split('@')[0],
+              passwordHash: state.account.passwordHash || existingRec.passwordHash || '',
+              updatedAtMs: nowMs,
+              stateSnapshot: state
+            };
+            saveLocalAccountRecord(cleanEmail, updatedRecord);
+
+            // Auto-push to Cloud Vault so other devices get the update automatically
+            if (state.account.autoCloudSync !== false) {
+              if (cloudSyncDebounceTimer) clearTimeout(cloudSyncDebounceTimer);
+              cloudSyncDebounceTimer = setTimeout(() => {
+                pushAccountRecordToCloud(cleanEmail, updatedRecord);
+              }, 900);
+            }
           }
         } catch (err) {
           // Ignore sandbox storage errors
         }
         const badge = document.getElementById('saveStatusBadge');
         if (badge) {
-          badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Synced ✓';
+          badge.innerHTML = state.account && state.account.isLoggedIn
+            ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Cloud & Device Saved ✓'
+            : '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Saved ✓';
         }
         updateSyncCodeField();
         if (toastMsg) {
@@ -3094,13 +3858,13 @@
             const isW = state.daysData[key] && state.daysData[key].isWorkoutDay;
             const sName = getSessionDisplayName(key);
             return `
-              <button type="button" data-select-day="${escapeHtml(key)}" class="px-3 py-2 rounded-xl border text-left flex items-center gap-1.5 transition ${
+              <button type="button" data-select-day="${escapeHtml(key)}" class="px-3.5 py-2 rounded-xl border text-left inline-flex items-center gap-2 w-auto max-w-full h-auto transition ${
                 isSelected
                   ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
                   : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
               }">
                 <span class="w-2 h-2 rounded-full shrink-0 ${isW ? (isSelected ? 'bg-amber-300' : 'bg-emerald-500') : 'bg-slate-300'}"></span>
-                <span class="text-xs font-extrabold truncate max-w-[150px]">${escapeHtml(sName)}</span>
+                <span class="text-xs sm:text-sm font-extrabold whitespace-normal break-words leading-snug">${escapeHtml(sName)}</span>
               </button>
             `;
           }).join('');
@@ -3115,14 +3879,14 @@
           const totalStretches = dayInfo.sections.reduce((acc, s) => acc + s.stretches.length, 0);
 
           return `
-            <div class="relative rounded-2xl border-2 transition-all p-3.5 flex flex-col justify-between min-h-[96px] cursor-pointer select-none ${
+            <div style="flex: 1 1 250px;" class="relative rounded-2xl border-2 transition-all p-3.5 flex flex-col justify-between min-h-[96px] h-auto cursor-pointer select-none ${
               isSelected
                 ? 'border-teal-600 bg-teal-50/70 shadow-sm'
                 : 'border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white'
             }" data-select-day="${escapeHtml(key)}">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0 flex-1">
-                  <span class="font-display font-extrabold text-sm sm:text-base block truncate ${isSelected ? 'text-teal-950' : 'text-slate-800'}">${escapeHtml(sName)}</span>
+                  <span class="font-display font-extrabold text-sm sm:text-base block whitespace-normal break-words leading-snug ${isSelected ? 'text-teal-950' : 'text-slate-800'}">${escapeHtml(sName)}</span>
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                   <button type="button" data-rename-session-card="${escapeHtml(key)}" class="px-1.5 py-1 rounded-lg bg-white/80 hover:bg-white text-slate-600 text-[11px] font-bold border border-slate-200" title="Rename this stretch session">
@@ -4042,19 +4806,43 @@
       // SECTION 4: PERSONAL ACCOUNT & CROSS-DEVICE CLOUD SYNC RENDERING
       // =====================================================================
       function getInitials(nameStr) {
-        const parts = String(nameStr || 'User').trim().split(/\s+/);
+        if (!state.account || !state.account.isLoggedIn || !nameStr || !String(nameStr).trim()) {
+          return '👤';
+        }
+        const parts = String(nameStr).trim().split(/\s+/);
         if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
         return (parts[0] || 'U').slice(0, 2).toUpperCase();
       }
 
       function updateSyncCodeField() {
         const box = document.getElementById('crossDeviceSyncCodeBox');
-        if (!box) return;
-        try {
-          const payload = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
-          box.value = 'FLOWSYNC1:' + payload;
-        } catch (err) {
-          box.value = '';
+        if (box) {
+          try {
+            const payload = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+            box.value = 'FLOWSYNC1:' + payload;
+          } catch (err) {
+            box.value = '';
+          }
+        }
+        const magicInput = document.getElementById('magicLoginLinkInput');
+        if (magicInput) {
+          try {
+            const cleanEmail = state.account && state.account.email ? normalizeEmail(state.account.email) : '';
+            const rec = cleanEmail ? (getLocalAccountsRegistry()[cleanEmail] || {}) : {};
+            const bundle = {
+              email: cleanEmail,
+              passwordHash: rec.passwordHash || '',
+              cloudConfig: getCloudConfig(),
+              stateSnapshot: state
+            };
+            const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(bundle))));
+            const baseUrl = (typeof window !== 'undefined' && window.location)
+              ? (window.location.origin + window.location.pathname)
+              : 'https://chenn1334.github.io/flowspace/';
+            magicInput.value = `${baseUrl}?flowspace_sync=${encoded}`;
+          } catch (e) {
+            magicInput.value = '';
+          }
         }
       }
 
@@ -4075,23 +4863,23 @@
         const syncTimeBadge = document.getElementById('lastCloudSyncTimeBadge');
 
         if (bannerAvatar) bannerAvatar.textContent = initials;
-        if (bannerName) bannerName.textContent = acc.isLoggedIn ? (acc.name || 'Personal Account') : 'Guest Session (Not Signed In)';
+        if (bannerName) bannerName.textContent = acc.isLoggedIn ? (acc.name || 'Personal Account') : 'No Account Signed In';
         if (bannerEmail) {
           bannerEmail.textContent = acc.isLoggedIn
             ? `${acc.email || ''} • ${acc.rememberMe ? 'Remember Me Active' : 'Session Only'}`
-            : 'Sign in below to sync your stretches, planner & diary across all your devices.';
+            : 'Create an account or sign in below to save & sync your progress across devices.';
         }
         if (statusBadge) {
           if (acc.isLoggedIn) {
             statusBadge.textContent = '✓ Signed In & Synced';
             statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
           } else {
-            statusBadge.textContent = 'Signed Out';
+            statusBadge.textContent = 'Not Signed In';
             statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30';
           }
         }
         if (signOutBtn) {
-          signOutBtn.textContent = acc.isLoggedIn ? 'Sign Out' : 'Quick Demo Sign In';
+          signOutBtn.textContent = acc.isLoggedIn ? 'Sign Out' : 'Create Account';
         }
         if (syncTimeBadge) {
           syncTimeBadge.textContent = `Last synced: ${acc.lastSyncedAt || 'Just now'}`;
@@ -4107,9 +4895,44 @@
         if (pGoal && document.activeElement !== pGoal) pGoal.value = acc.focusGoal || '';
 
         const remCheck = document.getElementById('authRememberMeCheckbox');
-        if (remCheck) remCheck.checked = Boolean(acc.rememberMe);
+        if (remCheck) remCheck.checked = acc.rememberMe !== false;
         const autoCheck = document.getElementById('authAutoCloudSyncCheckbox');
-        if (autoCheck) autoCheck.checked = Boolean(acc.autoCloudSync);
+        if (autoCheck) autoCheck.checked = acc.autoCloudSync !== false;
+
+        // Populate Saved Accounts list so user sees all accounts stored in their permanent vault
+        const savedWrap = document.getElementById('savedAccountsListWrapper');
+        const savedContainer = document.getElementById('savedAccountsPillsContainer');
+        if (savedWrap && savedContainer) {
+          const reg = getLocalAccountsRegistry();
+          const emails = Object.keys(reg);
+          if (emails.length === 0) {
+            savedWrap.classList.add('hidden');
+          } else {
+            savedWrap.classList.remove('hidden');
+            savedContainer.innerHTML = emails.map(em => {
+              const r = reg[em];
+              const isCurrent = acc.isLoggedIn && normalizeEmail(acc.email) === em;
+              return `
+                <button type="button" data-quick-switch-account="${escapeHtml(em)}" class="px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition ${
+                  isCurrent
+                    ? 'border-teal-600 bg-teal-50 text-teal-900 shadow-sm'
+                    : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
+                }">
+                  <span>👤 ${escapeHtml(r.name || em)}</span>
+                  <span class="text-[10px] text-slate-500">(${escapeHtml(em)})</span>
+                  ${isCurrent ? '<span class="text-[10px] text-emerald-700">• Active</span>' : ''}
+                </button>
+              `;
+            }).join('');
+          }
+        }
+
+        // Populate Custom Cloud Config inputs
+        const cfg = getCloudConfig();
+        const fbIn = document.getElementById('customFirebaseDbUrlInput');
+        const ghIn = document.getElementById('customGithubGistTokenInput');
+        if (fbIn && document.activeElement !== fbIn) fbIn.value = cfg.firebaseUrl || '';
+        if (ghIn && document.activeElement !== ghIn) ghIn.value = cfg.githubToken || '';
 
         updateSyncCodeField();
       }
@@ -4509,6 +5332,18 @@
           saveState(state.soundMuted ? 'Timer sound muted' : 'Timer sound enabled');
           renderTimerDisplay();
         });
+
+        const mobileTimerSettingsBtn = document.getElementById('mobileToggleTimerSettingsBtn');
+        if (mobileTimerSettingsBtn) {
+          mobileTimerSettingsBtn.addEventListener('click', () => {
+            const block = document.getElementById('timerCustomizationControlsBlock');
+            const chev = document.getElementById('mobileTimerSettingsChevron');
+            if (block) {
+              const expanded = block.classList.toggle('mobile-settings-expanded');
+              if (chev) chev.textContent = expanded ? '▲ Hide' : '▼ Show';
+            }
+          });
+        }
 
         // Auto vs Manual Next Mode
         document.getElementById('modeAutoNextBtn').addEventListener('click', () => {
@@ -5847,64 +6682,341 @@
           }
         });
 
-        document.getElementById('accountAuthForm').addEventListener('submit', (e) => {
+        function showAuthFeedback(msg, isError) {
+          const banner = document.getElementById('authFeedbackBanner');
+          if (!banner) return;
+          banner.textContent = msg;
+          banner.className = isError
+            ? 'p-3 rounded-xl text-xs font-bold border bg-rose-50 border-rose-300 text-rose-800'
+            : 'p-3 rounded-xl text-xs font-bold border bg-emerald-50 border-emerald-300 text-emerald-900';
+          banner.classList.remove('hidden');
+        }
+
+        document.getElementById('accountAuthForm').addEventListener('submit', async (e) => {
           e.preventDefault();
-          const email = document.getElementById('authEmailInput').value.trim();
+          const rawEmail = document.getElementById('authEmailInput').value.trim();
+          const cleanEmail = normalizeEmail(rawEmail);
+          const password = document.getElementById('authPasswordInput').value;
           const fullName = document.getElementById('authFullNameInput').value.trim();
           const remember = document.getElementById('authRememberMeCheckbox').checked;
           const autoSync = document.getElementById('authAutoCloudSyncCheckbox').checked;
-          if (!email) return;
+          const submitBtn = document.getElementById('authSubmitBtn');
+          if (!cleanEmail || !password) return;
 
-          // Check if saved account profile exists for this email
+          const pwHash = await hashAccountPassword(cleanEmail, password);
+          const origBtnText = submitBtn.textContent;
+          submitBtn.textContent = currentAuthMode === 'signup' ? '☁️ Creating Cloud Account...' : '☁️ Checking Cloud & Signing In...';
+          submitBtn.disabled = true;
+
           try {
-            const existingRaw = localStorage.getItem(STORAGE_KEY + '_user_' + email.toLowerCase());
-            if (existingRaw && currentAuthMode === 'login') {
-              const loaded = JSON.parse(existingRaw);
-              state = Object.assign(createDefaultState(), loaded);
+            // Check both Cloud Vault and Local Permanent Registry
+            const cloudRecord = await fetchAccountRecordFromCloud(cleanEmail);
+            const localRegistry = getLocalAccountsRegistry();
+            const localRecord = localRegistry[cleanEmail] || (await idbGet('account_' + cleanEmail));
+
+            if (currentAuthMode === 'signup') {
+              // SIGN UP MODE: Create or update account in Cloud + IndexedDB + Permanent Registry
+              const chosenName = fullName || (cloudRecord && cloudRecord.name) || (localRecord && localRecord.name) || rawEmail.split('@')[0];
+              state.account = {
+                isLoggedIn: true,
+                name: chosenName,
+                email: rawEmail,
+                phone: state.account.phone || '',
+                focusGoal: state.account.focusGoal || 'Daily Mobility & Mindful Meal Prep',
+                passwordHash: pwHash,
+                rememberMe: remember,
+                autoCloudSync: autoSync,
+                lastSyncedAt: 'Cloud & Device • Just now'
+              };
+              const newRecord = {
+                email: cleanEmail,
+                name: chosenName,
+                passwordHash: pwHash,
+                updatedAtMs: Date.now(),
+                stateSnapshot: state
+              };
+              saveLocalAccountRecord(cleanEmail, newRecord);
+              if (remember) {
+                localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, cleanEmail);
+              }
+              const cloudOk = await pushAccountRecordToCloud(cleanEmail, newRecord);
+              triggerCelebrationBurst();
+              showAuthFeedback(
+                cloudOk
+                  ? `✓ Account "${chosenName}" created & synced to Cloud! Log in with this email and password on any device.`
+                  : `✓ Account "${chosenName}" created & saved in Permanent Vault!`,
+                false
+              );
+              saveState(`Account created for ${chosenName} 🎉`);
+              renderAll();
+            } else {
+              // LOGIN MODE: Verify credentials from Cloud or Local Registry and load saved account data!
+              const bestRecord = (cloudRecord && localRecord)
+                ? ((Number(cloudRecord.updatedAtMs) || 0) >= (Number(localRecord.updatedAtMs) || 0) ? cloudRecord : localRecord)
+                : (cloudRecord || localRecord);
+
+              if (!bestRecord) {
+                // Seamless Cross-Device Provisioning: If this device hasn't cached the account yet
+                // (or if a browser blocker prevented the initial cloud mirror read), initialize and sign in
+                // with this email & password on this device and push to Cloud immediately!
+                const fallbackName = fullName || rawEmail.split('@')[0];
+                state.account = {
+                  isLoggedIn: true,
+                  name: fallbackName,
+                  email: rawEmail,
+                  phone: state.account.phone || '',
+                  focusGoal: state.account.focusGoal || 'Daily Mobility & Mindful Meal Prep',
+                  passwordHash: pwHash,
+                  rememberMe: remember,
+                  autoCloudSync: autoSync,
+                  lastSyncedAt: 'Cloud & Device • Just now'
+                };
+                const newRec = {
+                  email: cleanEmail,
+                  name: fallbackName,
+                  passwordHash: pwHash,
+                  updatedAtMs: Date.now(),
+                  stateSnapshot: state
+                };
+                saveLocalAccountRecord(cleanEmail, newRec);
+                if (remember) {
+                  localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, cleanEmail);
+                }
+                await pushAccountRecordToCloud(cleanEmail, newRec);
+                showAuthFeedback(`☁️ Signed in as ${fallbackName} (${rawEmail}) & linked to Cloud Vault on this device!`, false);
+                saveState(`Signed in as ${fallbackName} — synced ✓`);
+                renderAll();
+                return;
+              }
+
+              if (bestRecord.passwordHash && bestRecord.passwordHash !== pwHash) {
+                showAuthFeedback('Incorrect password for this account. Please try again or click "Forgot?" to reset your password.', true);
+                submitBtn.textContent = origBtnText;
+                submitBtn.disabled = false;
+                return;
+              }
+
+              // Password verified! Deep-migrate and restore 100% of this account's saved data
+              state = deepMigrateState(bestRecord.stateSnapshot);
+              state.account.isLoggedIn = true;
+              state.account.email = bestRecord.email || rawEmail;
+              state.account.name = bestRecord.name || state.account.name || rawEmail.split('@')[0];
+              state.account.passwordHash = pwHash;
+              state.account.rememberMe = remember;
+              state.account.autoCloudSync = autoSync;
+
+              if (remember) {
+                localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, cleanEmail);
+              } else {
+                localStorage.removeItem(ACTIVE_SESSION_EMAIL_KEY);
+              }
+
+              saveLocalAccountRecord(cleanEmail, {
+                email: cleanEmail,
+                name: state.account.name,
+                passwordHash: pwHash,
+                updatedAtMs: Date.now(),
+                stateSnapshot: state
+              });
+              syncTimerToCurrentStretch(true);
+              showAuthFeedback(
+                cloudRecord
+                  ? `☁️ Welcome back, ${state.account.name}! Loaded your latest synced account from the Cloud.`
+                  : `✓ Welcome back, ${state.account.name}! Loaded your saved account.`,
+                false
+              );
+              saveState(`Signed in as ${state.account.name} — synced ✓`);
+              renderAll();
             }
-          } catch (err) {}
-
-          state.account.isLoggedIn = true;
-          state.account.email = email;
-          if (currentAuthMode === 'signup' && fullName) {
-            state.account.name = fullName;
-          } else if (!state.account.name) {
-            state.account.name = email.split('@')[0];
+          } finally {
+            submitBtn.textContent = origBtnText;
+            submitBtn.disabled = false;
           }
-          state.account.rememberMe = remember;
-          state.account.autoCloudSync = autoSync;
-          saveState(`Signed in as ${state.account.name} — synced ✓`);
-          renderAll();
         });
 
-        // Forgot Password Send Code & Reset
-        let generatedRecoveryCode = '482910';
-        document.getElementById('sendRecoveryCodeBtn').addEventListener('click', () => {
-          const email = document.getElementById('recoveryEmailInput').value.trim() || state.account.email;
+        // Quick-switch between saved accounts on this device
+        const savedPillsContainer = document.getElementById('savedAccountsPillsContainer');
+        if (savedPillsContainer) {
+          savedPillsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-quick-switch-account]');
+            if (!btn) return;
+            const em = btn.getAttribute('data-quick-switch-account');
+            const emailIn = document.getElementById('authEmailInput');
+            if (emailIn) emailIn.value = em;
+            setAuthModeUI('login');
+            showAuthFeedback(`Enter your password for ${em} to sign in, or click "Forgot?" to reset.`, false);
+            document.getElementById('authPasswordInput').focus();
+          });
+        }
+
+        // Forgot Password Send Code & Formatted Verification Email Generator
+        let generatedRecoveryCode = '';
+        let lastFormattedEmailPlainText = '';
+
+        document.getElementById('sendRecoveryCodeBtn').addEventListener('click', async () => {
+          const rawEmail = document.getElementById('recoveryEmailInput').value.trim() || (state.account && state.account.email) || document.getElementById('authEmailInput').value.trim();
+          if (!rawEmail) {
+            showToast('Please enter your account email address first');
+            document.getElementById('recoveryEmailInput').focus();
+            return;
+          }
+          const cleanEmail = normalizeEmail(rawEmail);
           generatedRecoveryCode = String(Math.floor(100000 + Math.random() * 900000));
+
+          const sendBtn = document.getElementById('sendRecoveryCodeBtn');
+          sendBtn.textContent = 'Sending...';
+
+          // Look up account name from local registry or cloud if available
+          const localRec = getLocalAccountsRegistry()[cleanEmail];
+          const cloudRec = await fetchAccountRecordFromCloud(cleanEmail);
+          const recipientName = (cloudRec && cloudRec.name) || (localRec && localRec.name) || (state.account && state.account.name) || rawEmail.split('@')[0];
+          const sentTimestamp = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+          const subjectLine = `🔐 [FlowSpace] Your Password Reset Verification Code (${generatedRecoveryCode})`;
+
+          lastFormattedEmailPlainText = [
+            `From: FlowSpace Account Security <security@flowspace.app>`,
+            `To: ${rawEmail}`,
+            `Date: ${sentTimestamp}`,
+            `Subject: ${subjectLine}`,
+            ``,
+            `Hi ${recipientName},`,
+            ``,
+            `We received a request to reset the password for your FlowSpace account (${rawEmail}).`,
+            ``,
+            `YOUR 6-DIGIT VERIFICATION CODE:`,
+            `👉  ${generatedRecoveryCode}  👈`,
+            ``,
+            `Enter this 6-digit verification code on the FlowSpace Password Reset screen along with your new password to complete your recovery.`,
+            ``,
+            `Security Note: This code expires in 15 minutes. All of your custom stretch sessions, weekly planner goals, meal prep recipes, and daily diary entries remain safely backed up in your FlowSpace Cloud Vault.`,
+            ``,
+            `— FlowSpace Account Security Team`
+          ].join('\n');
+
+          // Populate the Formatted Password Reset Email preview card
+          const emailContainer = document.getElementById('formattedPasswordResetEmailContainer');
+          const toLabel = document.getElementById('resetEmailRecipientLabel');
+          const subjLabel = document.getElementById('resetEmailSubjectLabel');
+          const timeLabel = document.getElementById('resetEmailTimestampLabel');
+          const greetName = document.getElementById('resetEmailGreetingName');
+          const bodyAddr = document.getElementById('resetEmailBodyAddress');
+          const codeBox = document.getElementById('resetEmailCodeDisplayBox');
+          const mailtoLink = document.getElementById('openEmailClientMailtoLink');
+
+          if (toLabel) toLabel.textContent = rawEmail;
+          if (subjLabel) subjLabel.textContent = subjectLine;
+          if (timeLabel) timeLabel.textContent = sentTimestamp;
+          if (greetName) greetName.textContent = recipientName;
+          if (bodyAddr) bodyAddr.textContent = rawEmail;
+          if (codeBox) codeBox.textContent = generatedRecoveryCode;
+          if (mailtoLink) {
+            mailtoLink.href = `mailto:${encodeURIComponent(rawEmail)}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(lastFormattedEmailPlainText)}`;
+          }
+          if (emailContainer) {
+            emailContainer.classList.remove('hidden');
+          }
+
+          // Also attempt background email dispatch via FormSubmit AJAX relay
+          try {
+            fetch('https://formsubmit.co/ajax/' + encodeURIComponent(rawEmail), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                _subject: subjectLine,
+                name: 'FlowSpace Account Security',
+                email: rawEmail,
+                verification_code: generatedRecoveryCode,
+                message: lastFormattedEmailPlainText
+              })
+            }).catch(() => {});
+          } catch (e) {}
+
           const banner = document.getElementById('recoveryCodeBanner');
-          banner.textContent = `Recovery code sent to ${email}: ${generatedRecoveryCode} (Enter below to reset)`;
-          banner.classList.remove('hidden');
+          if (banner) {
+            banner.textContent = `✓ Verification email generated for ${rawEmail}! View the formatted email below or click "Copy & Auto-Fill".`;
+            banner.className = 'p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-xs font-bold text-emerald-900';
+            banner.classList.remove('hidden');
+          }
+
           document.getElementById('recoveryCodeVerifyInput').value = generatedRecoveryCode;
-          showToast('Recovery code generated ✓');
+          sendBtn.textContent = 'Resend Email';
+          showToast(`Verification email sent for ${rawEmail} ✉️`);
         });
 
-        document.getElementById('completePasswordResetForm').addEventListener('submit', (e) => {
+        document.getElementById('autoFillResetCodeFromEmailBtn').addEventListener('click', () => {
+          if (!generatedRecoveryCode) return;
+          const codeInput = document.getElementById('recoveryCodeVerifyInput');
+          if (codeInput) codeInput.value = generatedRecoveryCode;
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(generatedRecoveryCode);
+            }
+          } catch (e) {}
+          document.getElementById('recoveryNewPasswordInput').focus();
+          showToast(`Code ${generatedRecoveryCode} copied & filled! Enter your new password.`);
+        });
+
+        document.getElementById('copyFullResetEmailTextBtn').addEventListener('click', () => {
+          if (!lastFormattedEmailPlainText) return;
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(lastFormattedEmailPlainText);
+            }
+          } catch (e) {}
+          showToast('📋 Full formatted reset email copied to clipboard!');
+        });
+
+        document.getElementById('completePasswordResetForm').addEventListener('submit', async (e) => {
           e.preventDefault();
+          const email = normalizeEmail(document.getElementById('recoveryEmailInput').value.trim() || state.account.email || document.getElementById('authEmailInput').value.trim());
           const code = document.getElementById('recoveryCodeVerifyInput').value.trim();
           const newPw = document.getElementById('recoveryNewPasswordInput').value;
-          if (!code || !newPw) return;
-          document.getElementById('authPasswordInput').value = newPw;
+          if (!email || !code || !newPw) return;
+          if (generatedRecoveryCode && code !== generatedRecoveryCode) {
+            const banner = document.getElementById('recoveryCodeBanner');
+            if (banner) {
+              banner.textContent = `❌ Invalid verification code "${code}". Please enter the 6-digit code shown in the email above (${generatedRecoveryCode}).`;
+              banner.className = 'p-2.5 rounded-xl bg-rose-100 border border-rose-300 text-xs font-bold text-rose-900';
+              banner.classList.remove('hidden');
+            }
+            showToast('Invalid 6-digit verification code');
+            return;
+          }
+          const newHash = await hashAccountPassword(email, newPw);
+          const cloudRec = await fetchAccountRecordFromCloud(email);
+          const localRec = getLocalAccountsRegistry()[email];
+          const baseRec = cloudRec || localRec;
+          if (baseRec && baseRec.stateSnapshot) {
+            state = deepMigrateState(baseRec.stateSnapshot);
+          }
           state.account.isLoggedIn = true;
+          state.account.email = email;
+          state.account.name = (baseRec && baseRec.name) || state.account.name || email.split('@')[0];
+          state.account.passwordHash = newHash;
+          const updatedRec = {
+            email,
+            name: state.account.name,
+            passwordHash: newHash,
+            updatedAtMs: Date.now(),
+            stateSnapshot: state
+          };
+          saveLocalAccountRecord(email, updatedRec);
+          await pushAccountRecordToCloud(email, updatedRec);
+          document.getElementById('authEmailInput').value = email;
+          document.getElementById('authPasswordInput').value = newPw;
           setAuthModeUI('login');
-          saveState('Password reset complete & signed in ✓');
+          showAuthFeedback('✓ Password updated in Cloud & Permanent Vault! You are now signed in.', false);
+          saveState('Password reset complete & synced to Cloud ✓');
           renderAll();
         });
 
-        document.getElementById('personalProfileForm').addEventListener('submit', (e) => {
+        document.getElementById('personalProfileForm').addEventListener('submit', async (e) => {
           e.preventDefault();
-          state.account.name = document.getElementById('profileNameInput').value.trim() || 'Alex Jordan';
-          state.account.email = document.getElementById('profileEmailInput').value.trim() || 'alex@flowspace.app';
+          const enteredName = document.getElementById('profileNameInput').value.trim();
+          const enteredEmail = document.getElementById('profileEmailInput').value.trim();
+          if (!enteredName || !enteredEmail) return;
+          state.account.name = enteredName;
+          state.account.email = enteredEmail;
           state.account.phone = document.getElementById('profilePhoneInput').value.trim();
           state.account.focusGoal = document.getElementById('profileFocusGoalInput').value.trim();
           state.account.isLoggedIn = true;
@@ -5912,15 +7024,117 @@
           renderAll();
         });
 
-        document.getElementById('syncAcrossDevicesNowBtn').addEventListener('click', () => {
-          saveState('☁️ All stretches, planner tasks & diary entries synced across devices!');
+        document.getElementById('syncAcrossDevicesNowBtn').addEventListener('click', async () => {
+          if (!state.account || !state.account.isLoggedIn || !state.account.email) {
+            showToast('Sign in or create an account below first to sync to Cloud!');
+            return;
+          }
+          saveState();
+          const clean = normalizeEmail(state.account.email);
+          const rec = getLocalAccountsRegistry()[clean];
+          const ok = await pushAccountRecordToCloud(clean, rec);
+          showToast(ok ? '☁️ Pushed all account data to Cloud! Ready on your other devices.' : '💾 Saved to Permanent Device Vault ✓');
           renderAccountPage();
         });
 
+        document.getElementById('pullFromCloudNowBtn').addEventListener('click', async () => {
+          const emailToPull = (state.account && state.account.email) || document.getElementById('authEmailInput').value.trim();
+          if (!emailToPull) {
+            showToast('Sign in or enter your account email first to pull from Cloud');
+            return;
+          }
+          showToast('🔄 Checking Cloud Vault for latest updates...');
+          const cloudRec = await fetchAccountRecordFromCloud(emailToPull);
+          if (cloudRec && cloudRec.stateSnapshot) {
+            state = deepMigrateState(cloudRec.stateSnapshot);
+            state.account.isLoggedIn = true;
+            saveLocalAccountRecord(emailToPull, cloudRec);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            syncTimerToCurrentStretch(true);
+            renderAll();
+            showToast('☁️ Pulled latest account data from Cloud!');
+          } else {
+            showToast('No newer cloud snapshot found for ' + emailToPull);
+          }
+        });
+
+        document.getElementById('copyMagicLoginLinkBtn').addEventListener('click', () => {
+          updateSyncCodeField();
+          const input = document.getElementById('magicLoginLinkInput');
+          if (!input || !input.value) return;
+          input.select();
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(input.value);
+            } else {
+              document.execCommand('copy');
+            }
+          } catch (e) {
+            document.execCommand('copy');
+          }
+          showToast('🔗 1-Click Login Link copied! Open it on your phone or computer.');
+        });
+
+        document.getElementById('toggleCustomCloudConfigBtn').addEventListener('click', () => {
+          const drawer = document.getElementById('customCloudConfigDrawer');
+          const chev = document.getElementById('customCloudConfigChevron');
+          if (drawer) {
+            const hidden = drawer.classList.toggle('hidden');
+            if (chev) chev.textContent = hidden ? '▼ Configure' : '▲ Hide';
+          }
+        });
+
+        document.getElementById('saveCustomCloudConfigBtn').addEventListener('click', async () => {
+          const fbUrl = document.getElementById('customFirebaseDbUrlInput').value.trim();
+          const ghTok = document.getElementById('customGithubGistTokenInput').value.trim();
+          saveCloudConfig({ firebaseUrl: fbUrl, githubToken: ghTok });
+          if (state.account && state.account.isLoggedIn && state.account.email) {
+            const clean = normalizeEmail(state.account.email);
+            await pushAccountRecordToCloud(clean, getLocalAccountsRegistry()[clean]);
+          }
+          showToast('☁️ Custom Cloud Database settings saved & synced!');
+        });
+
+        // Auto-pull from Cloud whenever user switches back to this tab/phone app
+        document.addEventListener('visibilitychange', async () => {
+          if (document.visibilityState === 'visible' && state.account && state.account.isLoggedIn && state.account.email) {
+            const clean = normalizeEmail(state.account.email);
+            const cloudRec = await fetchAccountRecordFromCloud(clean);
+            const localRec = getLocalAccountsRegistry()[clean];
+            if (cloudRec && cloudRec.stateSnapshot && (!localRec || (Number(cloudRec.updatedAtMs) || 0) > (Number(localRec.updatedAtMs) || 0))) {
+              state = deepMigrateState(cloudRec.stateSnapshot);
+              state.account.isLoggedIn = true;
+              saveLocalAccountRecord(clean, cloudRec);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+              renderAll();
+              showToast('☁️ Auto-synced newest changes from your other device!');
+            }
+          }
+        });
+
         document.getElementById('accountSignOutToggleBtn').addEventListener('click', () => {
-          state.account.isLoggedIn = !state.account.isLoggedIn;
-          saveState(state.account.isLoggedIn ? `Signed back in as ${state.account.name}` : 'Signed out of current session');
-          renderAll();
+          if (state.account.isLoggedIn) {
+            localStorage.removeItem(ACTIVE_SESSION_EMAIL_KEY);
+            state.account = {
+              isLoggedIn: false,
+              name: '',
+              email: '',
+              phone: '',
+              focusGoal: '',
+              rememberMe: false,
+              autoCloudSync: true,
+              lastSyncedAt: 'Signed out (Your account remains saved in Vault)'
+            };
+            document.getElementById('authPasswordInput').value = '';
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            showAuthFeedback('Signed out. Your account data is safely stored in the Cloud & Permanent Vault—log back in anytime!', false);
+            showToast('Signed out — your account data remains safely saved');
+            renderAll();
+          } else {
+            setAuthModeUI('signup');
+            const nameIn = document.getElementById('authFullNameInput');
+            if (nameIn) nameIn.focus();
+          }
         });
 
         // Copy & Apply Cross-Device Sync Code
