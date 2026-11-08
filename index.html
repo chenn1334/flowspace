@@ -334,6 +334,7 @@
             <span>Personal Planner</span>
           </button>
           <button type="button" id="navTabDiary" data-section="diary" class="nav-tab-btn flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all">
+            <span>📓</span>
             <span>Daily Diary</span>
           </button>
           <button type="button" id="navTabAccount" data-section="account" class="nav-tab-btn flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all">
@@ -379,9 +380,9 @@
           <!-- Auto-Expanding Session Header & Quick Actions -->
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2 min-w-0">
-              <span class="text-xs font-extrabold text-slate-800 whitespace-normal break-words">Session: <span id="mobileAppSelectedDayLabel" class="text-teal-700 whitespace-normal break-words">Morning Spine & Hip Flow</span></span>
-              <button type="button" id="quickRenameSessionTopBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition" title="Rename this stretch session">
-                ✏️ Rename Session
+              <span class="text-xs font-extrabold text-slate-800 whitespace-normal break-words">Session: <span id="mobileAppSelectedDayLabel" class="text-teal-700 whitespace-normal break-words">None Selected</span></span>
+              <button type="button" id="quickRenameSessionTopBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition" title="Edit this section / session">
+                <span>✏️ Edit Section</span><span class="hidden">✏️ Rename Session</span>
               </button>
               <button type="button" id="quickNewSessionTopBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white transition" title="Create a new stretch session">
                 + New Session
@@ -392,19 +393,123 @@
             </button>
           </div>
 
-          <!-- Collapsible Inline Session Manager Bar (Rename Current Session or Create New Session) -->
+          <!-- SEPARATE PANEL 1: EDIT SECTION / SESSION ONLY (Does NOT open when clicking + New Session) -->
           <div id="sessionManagerInlineBar" class="hidden bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2.5">
             <form id="renameStretchSessionForm" class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-              <label for="renameStretchSessionInput" class="text-xs font-bold text-slate-700 shrink-0">Session Name:</label>
-              <input type="text" id="renameStretchSessionInput" placeholder="Enter custom stretch session name (e.g., Full-Body Morning Flow, Post-Leg Day)..." class="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-teal-500" required />
+              <label for="renameStretchSessionInput" class="text-xs font-bold text-slate-700 shrink-0">Edit Section / Session Name:</label>
+              <input type="text" id="renameStretchSessionInput" value="" placeholder="Enter new name..." class="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-teal-500" required />
               <button type="submit" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0">Save Name</button>
               <button type="button" id="deleteCurrentStretchSessionBtn" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold shrink-0">🗑 Delete Session</button>
               <button type="button" id="closeSessionManagerBarBtn" class="px-2.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold shrink-0">✕</button>
             </form>
-            <form id="createStretchSessionForm" class="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-2 border-t border-slate-200">
-              <label for="newStretchSessionNameInput" class="text-xs font-bold text-slate-700 shrink-0">Create New Session:</label>
-              <input type="text" id="newStretchSessionNameInput" placeholder="New session title (e.g., Upper Body & Neck Release, Evening Splits)..." class="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm focus:outline-none focus:border-teal-500" required />
-              <button type="submit" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shrink-0">+ Create Session</button>
+          </div>
+
+          <!-- SEPARATE PANEL 2: SMALL TAB FOR CREATING A NEW STRETCH SESSION (Add stretches from Library or create new ones — 0 pre-filled stretches!) -->
+          <div id="createNewSessionTabPanel" class="hidden bg-slate-50 rounded-2xl p-4 border-2 border-teal-300 shadow-sm space-y-4 animate-pop">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+              <div>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-teal-700">New Session Builder</span>
+                <h4 class="text-sm sm:text-base font-extrabold text-slate-900">Create New Stretch Session</h4>
+              </div>
+              <button type="button" id="closeCreateNewSessionTabBtn" class="px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">✕ Close</button>
+            </div>
+
+            <form id="createStretchSessionForm" class="space-y-3.5">
+              <div>
+                <label for="newStretchSessionNameInput" class="block text-xs font-bold text-slate-700 mb-1">1. Session Name *</label>
+                <input type="text" id="newStretchSessionNameInput" value="" placeholder="Enter session name (e.g., Morning Mobility, Lower Body Flow)..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-teal-500" required />
+              </div>
+
+              <!-- Small Segmented Tab Inside Create Session: Add New Stretch vs Pick from Library -->
+              <div class="bg-white rounded-xl p-3 border border-slate-200 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-slate-700">2. Add Stretches to This Session (Optional)</span>
+                  <div class="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <button type="button" id="newSessionSubtabNewBtn" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-teal-700 shadow-sm">+ Add New Stretch</button>
+                    <button type="button" id="newSessionSubtabLibBtn" class="px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600">★ From Library</button>
+                  </div>
+                </div>
+
+                <!-- Sub-Tab A: Create & Add a New Stretch (With Image Upload, Image URL & 18 Preset Stretch Illustrations!) -->
+                <div id="newSessionSubtabNewPanel" class="space-y-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    <div class="sm:col-span-5">
+                      <input type="text" id="newSessionCustomStretchName" value="" placeholder="Enter stretch name..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:border-teal-500" />
+                    </div>
+                    <div class="sm:col-span-3">
+                      <input type="number" id="newSessionCustomStretchDuration" value="" min="5" max="1800" placeholder="Seconds (e.g. 45)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold focus:outline-none focus:border-teal-500" />
+                    </div>
+                    <div class="sm:col-span-4">
+                      <select id="newSessionCustomStretchArea" class="w-full px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700">
+                        <option value="Full Body">Full Body</option>
+                        <option value="Spine & Back">Spine & Back</option>
+                        <option value="Hips & Glutes">Hips & Glutes</option>
+                        <option value="Hamstrings & Legs">Hamstrings & Legs</option>
+                        <option value="Neck & Shoulders">Neck & Shoulders</option>
+                        <option value="Chest & Core">Chest & Core</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                    <input type="text" id="newSessionCustomStretchDesc" value="" placeholder="Optional description / form cues..." class="flex-1 min-w-[160px] px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:border-teal-500" />
+                  </div>
+
+                  <!-- Image Picker for New Session Stretch (Upload Photo or Paste Image URL — No Recommended Presets) -->
+                  <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span class="text-[11px] font-bold text-slate-700">🖼️ Stretch Image (Optional — Upload or Paste URL, Change Anytime)</span>
+                      <button type="button" id="newSessionClearImageBtn" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">
+                        🚫 No Image
+                      </button>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                      <img id="newSessionStretchImgPreview" src="" alt="Stretch preview" class="hidden w-16 h-16 rounded-xl object-cover bg-white border border-slate-300 shrink-0" />
+                      <div class="flex-1 min-w-[180px] flex flex-wrap items-center gap-2">
+                        <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700 inline-flex items-center gap-1.5 shadow-sm">
+                          <span>📷 Upload Image</span>
+                          <input type="file" id="newSessionStretchImgFileInput" accept="image/*" class="hidden" />
+                        </label>
+                        <input type="url" id="newSessionStretchImgUrlInput" value="" placeholder="Or paste image URL..." class="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-none focus:border-teal-500" />
+                      </div>
+                    </div>
+
+                    <div id="newSessionPresetImgGrid" class="hidden"></div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <label class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                      <input type="checkbox" id="newSessionSaveStretchToLibCheck" class="rounded text-teal-600" />
+                      <span>Also save this stretch to my Personal Library</span>
+                    </label>
+                    <button type="button" id="addCustomStretchToNewSessionBtn" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm shrink-0">
+                      + Add Stretch
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Sub-Tab B: Pick from Personal Library -->
+                <div id="newSessionSubtabLibPanel" class="hidden space-y-2 max-h-44 overflow-y-auto pr-1">
+                  <!-- Populated by JS with Personal Library items -->
+                </div>
+
+                <!-- List of Stretches Queued for This New Session (Starts Empty!) -->
+                <div class="pt-2 border-t border-slate-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] font-bold text-slate-500">Stretches in this new session:</span>
+                    <span id="newSessionDraftCountBadge" class="text-[11px] font-bold text-teal-700">0 added</span>
+                  </div>
+                  <div id="newSessionDraftStretchesList" class="space-y-1.5">
+                    <p class="text-xs text-slate-400 italic">No stretches added yet. Add stretches above or create the session empty.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 pt-1">
+                <button type="button" id="cancelCreateNewSessionTabBtn" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-sm">+ Create Session</button>
+              </div>
             </form>
           </div>
 
@@ -437,7 +542,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" id="openSessionManagerCardBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition">
-                + Create / Rename Session
+                <span>+ Create New Session</span><span class="hidden">+ Create / Rename Session</span>
               </button>
               <button type="button" id="jumpToTodayStretchBtn" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
                 Today (Mon)
@@ -490,30 +595,34 @@
             <!-- Timer Body -->
             <div class="p-4 sm:p-6 space-y-5">
 
-              <!-- Circular Countdown Ring + Picture Preview -->
+              <!-- Circular Countdown Ring (Isolated so text never collides with the ring!) + Auto-Expanding Text Box -->
               <div class="flex flex-col items-center text-center">
-                <div class="relative w-52 h-52 sm:w-56 sm:h-56 flex items-center justify-center">
+                <div class="relative w-52 h-52 sm:w-60 sm:h-60 flex items-center justify-center shrink-0">
                   <svg class="w-full h-full" viewBox="0 0 220 220">
                     <circle cx="110" cy="110" r="98" stroke="#e2e8f0" stroke-width="12" fill="none"></circle>
                     <circle id="timerProgressCircle" class="timer-ring-circle" cx="110" cy="110" r="98" stroke="#0d9488" stroke-width="12" stroke-linecap="round" fill="none" stroke-dasharray="615.75" stroke-dashoffset="0"></circle>
                   </svg>
-                  <div class="absolute inset-0 flex flex-col items-center justify-center px-4">
-                    <span id="timerCountdownDisplay" class="font-display text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight tabular-nums">00:45</span>
-                    <span id="timerSubStatusText" class="text-xs font-semibold text-teal-700 mt-1 uppercase tracking-wide">Hold Stretch</span>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center px-7 pointer-events-none">
+                    <span id="timerCountdownDisplay" class="font-display text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight tabular-nums leading-none">00:00</span>
                   </div>
                 </div>
 
-                <!-- Current Stretch Image & Details -->
-                <div id="activeStretchCardDisplay" class="w-full mt-4 bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 text-left">
-                  <div class="flex items-start gap-3.5">
-                    <img id="activeStretchImage" src="" alt="Current stretch illustration" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover bg-white border border-slate-200 shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                        <span id="activeStretchSectionBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal-100 text-teal-800">Morning Mobility</span>
-                        <span id="activeStretchTargetBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">Spine & Back</span>
+                <!-- Status Pill Positioned Cleanly Outside the Ring so Long Text Never Overlaps the Circle -->
+                <div class="mt-2.5 max-w-full px-3">
+                  <span id="timerSubStatusText" class="inline-block px-3.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-teal-700 uppercase tracking-wide whitespace-normal break-words leading-snug">No Stretch Loaded</span>
+                </div>
+
+                <!-- Current Stretch Image & Auto-Expanding Details Box (Hides Image When No Stretch Selected!) -->
+                <div id="activeStretchCardDisplay" class="w-full mt-3.5 bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-left overflow-hidden">
+                  <div class="flex flex-col sm:flex-row items-start gap-3.5">
+                    <img id="activeStretchImage" src="" alt="Current stretch illustration" class="hidden w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover bg-white border border-slate-200 shrink-0 self-center sm:self-start" />
+                    <div class="min-w-0 flex-1 w-full">
+                      <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+                        <span id="activeStretchSectionBadge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-800 whitespace-normal break-words">Empty</span>
+                        <span id="activeStretchTargetBadge" class="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700 whitespace-normal break-words">Custom</span>
                       </div>
-                      <h3 id="activeStretchTitle" class="font-bold text-base sm:text-lg text-slate-900 leading-snug">Cat-Cow Spinal Flow</h3>
-                      <p id="activeStretchDescription" class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">Inhale as you drop your belly and lift your gaze; exhale as you round your spine gently toward the ceiling.</p>
+                      <h3 id="activeStretchTitle" class="font-bold text-base sm:text-lg text-slate-900 leading-snug whitespace-normal break-words">No Stretch Selected</h3>
+                      <p id="activeStretchDescription" class="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed whitespace-pre-wrap break-words">Click + New Session to create a stretch session and add your own stretches.</p>
                     </div>
                   </div>
                 </div>
@@ -618,7 +727,7 @@
                       <button type="button" id="prepMinus5Btn" class="w-8 h-9 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700">-5s</button>
                       <button type="button" id="prepMinus1Btn" class="w-8 h-9 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700">-1s</button>
                       <div class="relative">
-                        <input type="number" id="customPrepTimeInput" min="0" max="600" step="1" value="10" class="w-20 h-9 px-2.5 pr-6 rounded-lg border border-teal-500 bg-white text-center font-bold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+                        <input type="number" id="customPrepTimeInput" min="0" max="600" step="1" value="" placeholder="0" class="w-20 h-9 px-2.5 pr-6 rounded-lg border border-teal-500 bg-white text-center font-bold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
                         <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">s</span>
                       </div>
                       <button type="button" id="prepPlus1Btn" class="w-8 h-9 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700">+1s</button>
@@ -641,9 +750,9 @@
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div class="flex flex-wrap items-center gap-2">
-                      <h2 id="currentDayHeading" class="text-lg sm:text-xl font-extrabold text-slate-900">Morning Mobility Session</h2>
-                      <button type="button" id="routineHeaderRenameSessionBtn" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="Change whole stretch session name">
-                        ✏️ Change Session Name
+                      <h2 id="currentDayHeading" class="text-lg sm:text-xl font-extrabold text-slate-900">No Session Selected</h2>
+                      <button type="button" id="routineHeaderRenameSessionBtn" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="Edit section / session name">
+                        <span>✏️ Edit Section</span><span class="hidden">✏️ Change Session Name</span>
                       </button>
                       <button type="button" id="toggleCurrentDayWorkoutBtn" class="px-3 py-1 rounded-full text-xs font-bold transition">
                         ✓ Workout Day
@@ -883,7 +992,7 @@
                 <div>
                   <label for="newGoalTargetInput" class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">Weekly Target Frequency (Times per Week)</label>
                   <div class="flex items-center gap-2">
-                    <input type="number" id="newGoalTargetInput" min="1" max="30" value="5" class="w-24 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-center font-extrabold" title="Target count per week" />
+                    <input type="number" id="newGoalTargetInput" min="1" max="30" value="" placeholder="e.g. 5" class="w-24 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-center font-extrabold" title="Target count per week" />
                     <span class="text-xs sm:text-sm text-slate-600 font-medium">times this week</span>
                   </div>
                 </div>
@@ -1056,7 +1165,7 @@
         <div class="flex flex-col gap-2 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm">
           <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button type="button" data-diary-subview="entry" class="diary-subview-btn py-2 rounded-lg text-xs font-extrabold transition-all bg-white text-teal-700 shadow-sm">
-              🏆 Today's Proud Entry
+              📓 Today's Proud Entry
             </button>
             <button type="button" data-diary-subview="calendar" class="diary-subview-btn py-2 rounded-lg text-xs font-bold transition-all text-slate-600">
               🗓️ Calendar & History
@@ -1155,15 +1264,20 @@
                 </button>
               </form>
 
-              <!-- Add Your Own Custom Category for Proud Wins -->
-              <div class="flex flex-wrap items-center justify-between gap-2 bg-white/80 p-2.5 rounded-xl border border-amber-200/80">
-                <span class="text-[11px] font-bold text-amber-900">🏷️ Custom Win Category:</span>
-                <div class="flex flex-1 min-w-[200px] items-center gap-1.5">
-                  <input type="text" id="customProudCategoryEmojiInput" value="" placeholder="Emoji (opt)" maxlength="4" class="w-24 px-2 py-1.5 rounded-lg border border-amber-300 bg-white text-center text-xs" title="Optional Category Emoji" />
-                  <input type="text" id="customProudCategoryNameInput" placeholder="Add your own category (e.g., Creative Win, Boundaries, PR Lift)..." class="flex-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-white text-xs focus:outline-none focus:border-teal-500" />
-                  <button type="button" id="addCustomProudCategoryBtn" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0">
-                    + Add Category
-                  </button>
+              <!-- Add or Remove Categories for Proud Wins -->
+              <div class="bg-white/80 p-2.5 rounded-xl border border-amber-200/80 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold text-amber-900">🏷️ Manage Win Categories (Add or Remove):</span>
+                  <div class="flex flex-1 min-w-[200px] items-center gap-1.5">
+                    <input type="text" id="customProudCategoryEmojiInput" value="" placeholder="Emoji (opt)" maxlength="4" class="w-24 px-2 py-1.5 rounded-lg border border-amber-300 bg-white text-center text-xs" title="Optional Category Emoji" />
+                    <input type="text" id="customProudCategoryNameInput" placeholder="Add your own category (e.g., Creative Win, Boundaries, PR Lift)..." class="flex-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-white text-xs focus:outline-none focus:border-teal-500" />
+                    <button type="button" id="addCustomProudCategoryBtn" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0">
+                      + Add Category
+                    </button>
+                  </div>
+                </div>
+                <div id="proudCategoriesManageList" class="flex flex-wrap items-center gap-1.5 pt-1">
+                  <!-- Populated by JS with removable category pills -->
                 </div>
               </div>
 
@@ -1651,7 +1765,7 @@
         <span>Planner</span>
       </button>
       <button type="button" data-section="diary" class="nav-tab-btn flex-1 py-1.5 rounded-xl flex flex-col items-center gap-0.5 text-[11px] font-bold">
-        <span class="text-base leading-none">🏆</span>
+        <span class="text-base leading-none">📓</span>
         <span>Diary</span>
       </button>
       <button type="button" data-section="account" class="nav-tab-btn flex-1 py-1.5 rounded-xl flex flex-col items-center gap-0.5 text-[11px] font-bold">
@@ -1683,7 +1797,7 @@
           </div>
           <div class="sm:col-span-4">
             <label for="modalStretchDuration" class="block text-xs font-bold text-slate-700 mb-1">Duration (Seconds) *</label>
-            <input type="number" id="modalStretchDuration" min="5" max="1800" step="1" value="45" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:outline-none focus:border-teal-500" required />
+            <input type="number" id="modalStretchDuration" min="5" max="1800" step="1" value="" placeholder="e.g. 45" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:outline-none focus:border-teal-500" required />
           </div>
         </div>
 
@@ -1712,27 +1826,28 @@
           <textarea id="modalStretchDescription" rows="3" placeholder="Add step-by-step breathing cues, alignment reminders, or modifications..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:border-teal-500"></textarea>
         </div>
 
-        <!-- Picture / Illustration Selector + Custom Upload + Image URL -->
+        <!-- Custom Picture Upload + Image URL (Change or Remove Image Anytime) -->
         <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <label class="block text-xs font-bold text-slate-700">Stretch Picture / Visual</label>
+          <div class="flex items-center justify-between gap-2">
+            <label class="block text-xs font-bold text-slate-700">🖼️ Stretch Picture / Visual (Optional — Change Anytime)</label>
+            <button type="button" id="modalClearImageBtn" class="text-[11px] font-bold text-slate-500 hover:text-rose-600">🚫 No Image</button>
+          </div>
 
           <div class="flex items-center gap-3">
-            <img id="modalStretchImagePreview" src="" alt="Preview" class="w-20 h-20 rounded-xl object-cover bg-white border border-slate-300 shrink-0" />
+            <img id="modalStretchImagePreview" src="" alt="Preview" class="hidden w-20 h-20 rounded-xl object-cover bg-white border border-slate-300 shrink-0" />
             <div class="flex-1 space-y-2">
               <div class="flex flex-wrap gap-2">
-                <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5">
+                <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5 shadow-sm">
                   <span>📷 Upload Picture</span>
                   <input type="file" id="modalStretchImageFileInput" accept="image/*" class="hidden" />
                 </label>
                 <input type="url" id="modalStretchImageUrlInput" placeholder="Or paste image URL..." class="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-none focus:border-teal-500" />
               </div>
-              <p class="text-[11px] text-slate-500">Or select a built-in illustrated pose below:</p>
+              <p class="text-[11px] text-slate-500">Upload your own photo or paste an image link. You can add, change, or remove the image for any stretch whenever you want.</p>
             </div>
           </div>
 
-          <div id="presetIllustrationsGrid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
-            <!-- Populated by JS -->
-          </div>
+          <div id="presetIllustrationsGrid" class="hidden"></div>
         </div>
 
         <!-- Save to Personal Library Checkbox -->
@@ -1907,69 +2022,45 @@
     (function() {
       // OPTIONAL: Paste your free Google Firebase Realtime Database URL below (e.g. 'https://my-app-default-rtdb.firebaseio.com')
       // so every device automatically connects to your permanent cloud database without any extra setup!
-      const DEFAULT_FIREBASE_DB_URL = '';
-      const STORAGE_KEY = 'flowspace_wellness_suite_v1';
+      const DEFAULT_FIREBASE_DB_URL = 'https://flowspace-ac306-default-rtdb.firebaseio.com';
+      const STORAGE_KEY = 'flowspace_wellness_suite_v3_empty';
       const TODAY_ISO = '2026-10-19'; // Monday, Oct 19, 2026
       const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-      // Built-in SVG pose illustrations encoded cleanly as data URIs
-      function makePoseSvg(title, bg1, bg2, accent, pathData) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+      // Studio-Quality Multi-Layer SVG Stretch Illustrations encoded cleanly as data URIs
+      function makePoseSvg(title, areaTag, bg1, bg2, accent, figureSvg) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
           <defs>
             <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stop-color="${bg1}"/>
               <stop offset="100%" stop-color="${bg2}"/>
             </linearGradient>
+            <radialGradient id="glow" cx="50%" cy="46%" r="44%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0.35"/>
+            </radialGradient>
           </defs>
-          <rect width="160" height="160" rx="24" fill="url(#g)"/>
-          <circle cx="80" cy="72" r="46" fill="#ffffff" fill-opacity="0.78"/>
-          <g stroke="${accent}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
-            ${pathData}
+          <rect width="200" height="200" rx="28" fill="url(#g)"/>
+          <circle cx="100" cy="88" r="64" fill="url(#glow)"/>
+          <!-- Studio Yoga Mat Base -->
+          <rect x="24" y="122" width="152" height="8" rx="4" fill="${accent}" fill-opacity="0.22"/>
+          <line x1="30" y1="126" x2="170" y2="126" stroke="${accent}" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.45"/>
+          <!-- Anatomical Figure Illustration -->
+          <g stroke="${accent}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            ${figureSvg}
           </g>
-          <rect x="14" y="124" width="132" height="24" rx="8" fill="#ffffff" fill-opacity="0.9"/>
-          <text x="80" y="140" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">${title}</text>
+          <!-- Area Tag Pill -->
+          <rect x="16" y="14" width="76" height="20" rx="10" fill="#ffffff" fill-opacity="0.88"/>
+          <text x="54" y="27" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="${accent}" text-anchor="middle">${areaTag}</text>
+          <!-- Bottom Title Banner -->
+          <rect x="14" y="150" width="172" height="36" rx="12" fill="#ffffff" fill-opacity="0.94"/>
+          <text x="100" y="172" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="12.5" font-weight="800" fill="#0f172a" text-anchor="middle">${title}</text>
         </svg>`;
         return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
       }
 
-      const PRESET_ILLUSTRATIONS = [
-        {
-          id: 'cat-cow',
-          label: 'Cat-Cow Flow',
-          url: makePoseSvg('Cat-Cow Spine', '#ccfbf1', '#99f6e4', '#0f766e',
-            '<circle cx="52" cy="64" r="7" fill="#0f766e"/><path d="M58 68 Q80 46 104 68 M60 68 L60 95 M102 68 L102 95 M44 95 L116 95"/>')
-        },
-        {
-          id: 'childs-pose',
-          label: "Child's Pose",
-          url: makePoseSvg("Child's Pose", '#e0e7ff', '#c7d2fe', '#4338ca',
-            '<circle cx="62" cy="82" r="6" fill="#4338ca"/><path d="M42 92 L68 86 Q92 72 108 90 L86 92 M38 94 L122 94"/>')
-        },
-        {
-          id: 'pigeon-hip',
-          label: 'Hip Opener',
-          url: makePoseSvg('Pigeon Hip', '#fef3c7', '#fde68a', '#b45309',
-            '<circle cx="62" cy="48" r="7" fill="#b45309"/><path d="M62 56 L66 86 L48 94 M66 86 L114 94 M40 96 L120 96"/>')
-        },
-        {
-          id: 'forward-fold',
-          label: 'Hamstring Fold',
-          url: makePoseSvg('Forward Fold', '#fce7f3', '#fbcfe8', '#be185d',
-            '<circle cx="92" cy="70" r="6" fill="#be185d"/><path d="M56 90 L108 90 M56 90 Q70 58 92 76 L104 86"/>')
-        },
-        {
-          id: 'thoracic-twist',
-          label: 'Thoracic Open',
-          url: makePoseSvg('Chest & Twist', '#dcfce7', '#bbf7d0', '#15803d',
-            '<circle cx="80" cy="46" r="7" fill="#15803d"/><path d="M80 55 L80 86 M52 54 L80 65 L108 48 M66 96 L80 86 L94 96"/>')
-        },
-        {
-          id: 'neck-shoulder',
-          label: 'Neck Release',
-          url: makePoseSvg('Neck & Trap', '#f3e8ff', '#e9d5ff', '#7e22ce',
-            '<circle cx="84" cy="52" r="9" fill="#7e22ce"/><path d="M80 62 L80 94 M56 76 Q80 64 104 76 M64 94 L96 94"/>')
-        }
-      ];
+      // Recommended stretch presets removed per user request — user adds their own stretches & images
+      const PRESET_ILLUSTRATIONS = [];
 
       function createDefaultState() {
         return {
@@ -1979,8 +2070,8 @@
           plannerMobileSubview: 'goals', // 'goals' | 'meals' | 'plan'
           diaryMobileSubview: 'entry',   // 'entry' | 'calendar'
 
-          selectedDay: 'Monday',
-          prepTimeSeconds: 10,
+          selectedDay: '',
+          prepTimeSeconds: 0,
           autoAdvanceNext: true,
           soundMuted: false,
           selectedRingtone: 'singing-bowl',
@@ -1996,18 +2087,7 @@
             accent: '#f59e0b',
             surface: '#f8fafc'
           },
-          savedThemePresets: [
-            {
-              id: 'saved-sage',
-              name: 'Matcha Sage Studio',
-              primary: '#3f6212',
-              primaryDark: '#365314',
-              primarySoft: '#ecfccb',
-              accent: '#d97706',
-              surface: '#f7fee7',
-              isCustomPreset: true
-            }
-          ],
+          savedThemePresets: [],
 
           // Personal Account & Cloud Sync State (Starts with NO account logged in!)
           account: {
@@ -2021,397 +2101,51 @@
             lastSyncedAt: 'Not signed in'
           },
 
-          // Custom Named Stretch Sessions (Can be renamed to anything, or new sessions created/deleted)
-          daysData: {
-            Monday: {
-              sessionName: 'Morning Spine & Hip Flow',
-              isWorkoutDay: true,
-              sections: [
-                {
-                  id: 'sec-mon-1',
-                  name: 'Morning Mobility',
-                  stretches: [
-                    {
-                      id: 'str-101',
-                      name: 'Cat-Cow Spinal Waves',
-                      duration: 45,
-                      targetArea: 'Spine & Back',
-                      description: 'Move slowly between flexion and extension with deep nasal breaths to wake up your thoracic and lumbar spine.',
-                      image: PRESET_ILLUSTRATIONS[0].url
-                    },
-                    {
-                      id: 'str-102',
-                      name: 'Open Book Thoracic Rotation',
-                      duration: 40,
-                      targetArea: 'Chest & Core',
-                      description: 'Lie on your side with knees bent at 90 degrees. Reach top arm across to the floor while keeping knees stacked.',
-                      image: PRESET_ILLUSTRATIONS[4].url
-                    }
-                  ]
-                },
-                {
-                  id: 'sec-mon-2',
-                  name: 'Evening Hip & Hamstring Unwind',
-                  stretches: [
-                    {
-                      id: 'str-103',
-                      name: '90/90 Pigeon Hip Opener',
-                      duration: 60,
-                      targetArea: 'Hips & Glutes',
-                      description: 'Keep your front shin parallel if comfortable, square your hips, and fold forward with a long spine.',
-                      image: PRESET_ILLUSTRATIONS[2].url
-                    },
-                    {
-                      id: 'str-104',
-                      name: "Child's Pose Lat Reach",
-                      duration: 45,
-                      targetArea: 'Spine & Back',
-                      description: 'Sink hips back toward heels and walk fingertips forward, breathing into your side ribs.',
-                      image: PRESET_ILLUSTRATIONS[1].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Tuesday: {
-              sessionName: 'Lower Body & Hamstring Release',
-              isWorkoutDay: true,
-              sections: [
-                {
-                  id: 'sec-tue-1',
-                  name: 'Post-Workout Lower Body Release',
-                  stretches: [
-                    {
-                      id: 'str-201',
-                      name: 'Seated Hamstring Forward Fold',
-                      duration: 45,
-                      targetArea: 'Hamstrings & Legs',
-                      description: 'Hinge from the hips rather than rounding the low back; soften knees slightly if hamstrings feel tight.',
-                      image: PRESET_ILLUSTRATIONS[3].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Wednesday: {
-              sessionName: 'Desk Posture & Neck Reset',
-              isWorkoutDay: false,
-              sections: [
-                {
-                  id: 'sec-wed-1',
-                  name: 'Active Recovery Desk Reset',
-                  stretches: [
-                    {
-                      id: 'str-301',
-                      name: 'Upper Trap & Neck Tilts',
-                      duration: 35,
-                      targetArea: 'Neck & Shoulders',
-                      description: 'Drop right ear toward right shoulder while gently anchoring left shoulder down. Switch halfway.',
-                      image: PRESET_ILLUSTRATIONS[5].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Thursday: {
-              sessionName: 'Active Dynamic Warmup',
-              isWorkoutDay: true,
-              sections: [
-                {
-                  id: 'sec-thu-1',
-                  name: 'Full Body Dynamic Flow',
-                  stretches: [
-                    {
-                      id: 'str-401',
-                      name: 'Cat-Cow Spinal Waves',
-                      duration: 45,
-                      targetArea: 'Spine & Back',
-                      description: 'Warm up each vertebra smoothly before training.',
-                      image: PRESET_ILLUSTRATIONS[0].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Friday: {
-              sessionName: 'Deep Hip & Glute Unwind',
-              isWorkoutDay: true,
-              sections: [
-                {
-                  id: 'sec-fri-1',
-                  name: 'End-of-Week Decompression',
-                  stretches: [
-                    {
-                      id: 'str-501',
-                      name: 'Pigeon Hip & Glute Release',
-                      duration: 60,
-                      targetArea: 'Hips & Glutes',
-                      description: 'Release seated desk tension from the deep external rotators.',
-                      image: PRESET_ILLUSTRATIONS[2].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Saturday: {
-              sessionName: 'Weekend Full-Body Recovery',
-              isWorkoutDay: true,
-              sections: [
-                {
-                  id: 'sec-sat-1',
-                  name: 'Weekend Deep Stretch Session',
-                  stretches: [
-                    {
-                      id: 'str-601',
-                      name: "Extended Child's Pose",
-                      duration: 60,
-                      targetArea: 'Full Body',
-                      description: 'Deep belly breaths for 60 seconds to restore recovery.',
-                      image: PRESET_ILLUSTRATIONS[1].url
-                    }
-                  ]
-                }
-              ]
-            },
-            Sunday: {
-              sessionName: 'Evening Bedtime Decompression',
-              isWorkoutDay: false,
-              sections: [
-                {
-                  id: 'sec-sun-1',
-                  name: 'Gentle Evening Reset',
-                  stretches: [
-                    {
-                      id: 'str-701',
-                      name: 'Neck & Shoulder Unwind',
-                      duration: 40,
-                      targetArea: 'Neck & Shoulders',
-                      description: 'Release tension before starting the new week.',
-                      image: PRESET_ILLUSTRATIONS[5].url
-                    }
-                  ]
-                }
-              ]
-            }
-          },
+          // Custom Named Stretch Sessions (Starts completely empty — 0 pre-filled sessions or stretches!)
+          daysData: {},
 
-          // Personal Stretch Library for quick 1-click insertion
-          personalLibrary: [
-            {
-              id: 'lib-1',
-              name: 'Cat-Cow Spinal Waves',
-              duration: 45,
-              targetArea: 'Spine & Back',
-              description: 'Alternate smoothly between spinal flexion and extension synchronized with slow breathing.',
-              image: PRESET_ILLUSTRATIONS[0].url
-            },
-            {
-              id: 'lib-2',
-              name: '90/90 Pigeon Hip Opener',
-              duration: 60,
-              targetArea: 'Hips & Glutes',
-              description: 'Deep glute and external hip rotator stretch; keep spine long as you fold.',
-              image: PRESET_ILLUSTRATIONS[2].url
-            },
-            {
-              id: 'lib-3',
-              name: 'Seated Forward Hamstring Fold',
-              duration: 45,
-              targetArea: 'Hamstrings & Legs',
-              description: 'Hinge at the waist with relaxed shoulders to lengthen posterior chain.',
-              image: PRESET_ILLUSTRATIONS[3].url
-            },
-            {
-              id: 'lib-4',
-              name: 'Upper Trap & Neck Release',
-              duration: 30,
-              targetArea: 'Neck & Shoulders',
-              description: 'Gentle lateral neck tilt to melt away computer and phone posture tension.',
-              image: PRESET_ILLUSTRATIONS[5].url
-            },
-            {
-              id: 'lib-5',
-              name: 'Thoracic Open Book Stretch',
-              duration: 45,
-              targetArea: 'Chest & Core',
-              description: 'Opens chest and upper back rotation after upper body workouts or desk work.',
-              image: PRESET_ILLUSTRATIONS[4].url
-            }
-          ],
+          // Personal Stretch Library (Starts completely empty — user adds their own!)
+          personalLibrary: [],
 
-          // Personal Planner State
+          // Personal Planner State (All boxes & lists start completely empty!)
           planner: {
             weekOffset: 0,
-            mantra: 'Move with intention, nourish well, and celebrate every small daily win.',
-            notes: 'Prep overnight oats and roasted veggies on Monday evening. Keep evening mobility routine under 15 mins so it stays effortless.',
+            mantra: '',
+            notes: '',
             mealFilterDay: 'ALL',
-            weeklyGoals: [
-              {
-                id: 'wg-1',
-                title: 'Complete 5 daily stretch routines',
-                category: 'Movement',
-                current: 2,
-                target: 5,
-                weeklyObjective: 'Eliminate lower-back and hip tightness across the whole week by dedicating 15 mindful minutes to spinal and hip mobility.',
-                weeklyMilestones: 'Morning mobility on Mon/Tue/Thu/Fri + Weekend deep stretch on Saturday'
-              },
-              {
-                id: 'wg-2',
-                title: 'Stick to home-cooked meal prep lunches',
-                category: 'Wellness',
-                current: 3,
-                target: 5,
-                weeklyObjective: 'Keep steady afternoon energy all week by batch-prepping high-protein lunches instead of ordering takeout.',
-                weeklyMilestones: 'Prep quinoa bowls & overnight oats on Monday; refresh greens mid-week'
-              },
-              {
-                id: 'wg-3',
-                title: 'Write in Proud Diary before bed',
-                category: 'Personal',
-                current: 4,
-                target: 7,
-                weeklyObjective: 'Build positive self-recognition across the entire week by recording at least one proud win every evening.',
-                weeklyMilestones: '5-minute evening reflection before sleep each night'
-              }
-            ],
+            weeklyGoals: [],
             dailyPlans: {
-              Monday: {
-                focus: 'Kickoff week + Mobility & Meal Prep',
-                tasks: [
-                  { id: 't-1', text: '15-min Morning Mobility stretch section', done: true },
-                  { id: 't-2', text: 'Batch prep quinoa bowls & roasted sweet potatoes', done: true },
-                  { id: 't-3', text: 'Review weekly goals and top 3 priorities', done: false }
-                ],
-                meals: [
-                  {
-                    id: 'm-1',
-                    slot: 'Breakfast',
-                    text: 'Chia berry protein oats + walnuts',
-                    prepped: true,
-                    recipeUrl: 'https://www.loveandlemons.com/overnight-oats-recipe/',
-                    ingredients: [
-                      { id: 'ing-1', text: '1/2 cup rolled oats', done: true },
-                      { id: 'ing-2', text: '1 tbsp chia seeds + 1 scoop vanilla protein', done: true },
-                      { id: 'ing-3', text: '3/4 cup almond milk', done: true },
-                      { id: 'ing-4', text: '1/2 cup mixed berries & chopped walnuts', done: false }
-                    ],
-                    steps: [
-                      { id: 'stp-1', text: 'Whisk rolled oats, chia seeds, protein powder, and almond milk in a mason jar.', done: true },
-                      { id: 'stp-2', text: 'Seal and refrigerate overnight (or at least 4 hours) until thick and creamy.', done: true },
-                      { id: 'stp-3', text: 'Top with fresh berries and toasted walnuts before serving.', done: false }
-                    ]
-                  },
-                  {
-                    id: 'm-2',
-                    slot: 'Lunch',
-                    text: 'Lemon herb chicken, quinoa & roasted broccoli bowl',
-                    prepped: true,
-                    recipeUrl: 'https://downshiftology.com/recipes/mediterranean-chicken-meal-prep-bowls/',
-                    ingredients: [
-                      { id: 'ing-5', text: '6 oz grilled lemon-oregano chicken breast', done: true },
-                      { id: 'ing-6', text: '3/4 cup cooked tri-color quinoa', done: true },
-                      { id: 'ing-7', text: '1 cup broccoli florets tossed in olive oil', done: true },
-                      { id: 'ing-8', text: 'Lemon tahini drizzle & pumpkin seeds', done: false }
-                    ],
-                    steps: [
-                      { id: 'stp-4', text: 'Roast broccoli florets at 425°F (220°C) for 18 minutes until crisp-tender.', done: true },
-                      { id: 'stp-5', text: 'Slice cooked lemon-herb chicken and portion alongside warm quinoa.', done: true },
-                      { id: 'stp-6', text: 'Drizzle with lemon-tahini dressing right before eating.', done: false }
-                    ]
-                  },
-                  {
-                    id: 'm-3',
-                    slot: 'Dinner',
-                    text: 'Salmon with garlic greens & sweet potato mash',
-                    prepped: false,
-                    recipeUrl: 'https://www.wellplated.com/baked-salmon-in-foil/',
-                    ingredients: [
-                      { id: 'ing-9', text: '1 wild salmon fillet (6 oz)', done: false },
-                      { id: 'ing-10', text: '1 medium sweet potato, cubed', done: false },
-                      { id: 'ing-11', text: '2 cups baby spinach & 2 cloves minced garlic', done: false }
-                    ],
-                    steps: [
-                      { id: 'stp-7', text: 'Boil cubed sweet potatoes for 12 minutes and mash with a pinch of sea salt.', done: false },
-                      { id: 'stp-8', text: 'Pan-sear or bake salmon at 400°F for 12–14 minutes until flaky.', done: false },
-                      { id: 'stp-9', text: 'Sauté garlic and baby spinach in olive oil for 2 minutes.', done: false }
-                    ]
-                  }
-                ]
-              },
-              Tuesday: {
-                focus: 'Strength training + Lower body stretch',
-                tasks: [
-                  { id: 't-4', text: 'Post-workout hamstring & hip cooldown', done: false },
-                  { id: 't-5', text: 'Deep work block (9:00 AM – 11:30 AM)', done: false }
-                ],
-                meals: [
-                  { id: 'm-4', slot: 'Breakfast', text: 'Greek yogurt parfait with hemp seeds', prepped: true },
-                  { id: 'm-5', slot: 'Lunch', text: 'Lemon herb chicken & quinoa bowl #2', prepped: true }
-                ]
-              },
-              Wednesday: {
-                focus: 'Mid-week recovery & posture check',
-                tasks: [
-                  { id: 't-6', text: 'Desk neck & shoulder release at 3 PM', done: false }
-                ],
-                meals: [
-                  { id: 'm-6', slot: 'Lunch', text: 'Turkey avocado wrap + side salad', prepped: false }
-                ]
-              },
-              Thursday: {
-                focus: 'Full body flow + mid-week grocery refresh',
-                tasks: [
-                  { id: 't-7', text: 'Full body dynamic stretch flow', done: false }
-                ],
-                meals: []
-              },
-              Friday: {
-                focus: 'Wrap up weekly goals + hip decompression',
-                tasks: [
-                  { id: 't-8', text: 'End-of-week pigeon hip release', done: false }
-                ],
-                meals: []
-              },
-              Saturday: {
-                focus: 'Weekend outdoor walk & long stretch',
-                tasks: [
-                  { id: 't-9', text: 'Weekend deep stretch session', done: false }
-                ],
-                meals: []
-              },
-              Sunday: {
-                focus: 'Rest, grocery shop & next week prep',
-                tasks: [
-                  { id: 't-10', text: 'Sunday meal prep for upcoming week', done: false }
-                ],
-                meals: []
-              }
+              Monday: { focus: '', tasks: [], meals: [] },
+              Tuesday: { focus: '', tasks: [], meals: [] },
+              Wednesday: { focus: '', tasks: [], meals: [] },
+              Thursday: { focus: '', tasks: [], meals: [] },
+              Friday: { focus: '', tasks: [], meals: [] },
+              Saturday: { focus: '', tasks: [], meals: [] },
+              Sunday: { focus: '', tasks: [], meals: [] }
             },
-            groceryPrepList: [
-              { id: 'gp-1', text: 'Wash & chop 2 heads of broccoli + bell peppers', done: true },
-              { id: 'gp-2', text: 'Cook 3 cups dry quinoa in vegetable broth', done: true },
-              { id: 'gp-3', text: 'Portion 4 jars of overnight chia protein oats', done: false },
-              { id: 'gp-4', text: 'Pick up wild salmon fillets, spinach & avocados', done: false }
-            ]
+            groceryPrepList: []
           },
 
-          // Diary State
+          // Diary State (All feelings & categories are fully removable by user!)
           diary: {
             selectedDate: TODAY_ISO,
             calendarYear: 2026,
             calendarMonth: 9,
+            moodsInitializedV12: true,
             customMoods: [
-              { id: 'Inspired', emoji: '🤩', label: 'Inspired', custom: true },
-              { id: 'Centered', emoji: '🧘', label: 'Centered', custom: true }
+              { id: 'Energized', emoji: '⚡', label: 'Energized', custom: true },
+              { id: 'Proud', emoji: '🏆', label: 'Proud', custom: true },
+              { id: 'Calm', emoji: '🌿', label: 'Calm', custom: true },
+              { id: 'Grateful', emoji: '💛', label: 'Grateful', custom: true },
+              { id: 'Tired', emoji: '🌙', label: 'Tired', custom: true },
+              { id: 'Resilient', emoji: '🔥', label: 'Resilient', custom: true }
             ],
             customProudCategories: [
               '🌟 Consistency',
               '💪 Body & Health',
               '🧠 Mindset',
               '💛 Kindness',
-              '🚀 Milestone',
-              '🎨 Creative Win',
-              '🤝 Healthy Boundary'
+              '🚀 Milestone'
             ],
             promptBank: [
               'Why did today matter to me?',
@@ -2421,41 +2155,7 @@
               'What is my #1 intention for tomorrow?',
               'Freeform Diary Notes & Thoughts'
             ],
-            entries: {
-              '2026-10-19': {
-                mood: 'Energized',
-                proudMoments: [
-                  { id: 'pm-1', text: 'Completed my morning spinal mobility routine before checking my phone', tag: '🌟 Consistency' },
-                  { id: 'pm-2', text: 'Prepped healthy lunches for Monday and Tuesday ahead of time', tag: '💪 Body & Health' }
-                ],
-                promptSections: [
-                  {
-                    id: 'psec-1',
-                    question: 'Why did today matter to me?',
-                    answer: 'Instead of rushing straight into work this Monday, I gave myself 15 calm minutes on the mat. My lower back feels noticeably looser.'
-                  },
-                  {
-                    id: 'psec-2',
-                    question: 'What am I grateful for today?',
-                    answer: 'Morning sunlight, warm coffee, and having a clear plan for the week.'
-                  }
-                ],
-                proudReflection: 'Instead of rushing straight into work this Monday, I gave myself 15 calm minutes on the mat. My lower back feels noticeably looser.',
-                gratitude: 'Morning sunlight, warm coffee, and having a clear plan for the week.',
-                freeform: 'Feeling grounded starting the week. Setting custom prep times between stretches made transitions between floor poses much less rushed.',
-                updatedAt: 'Today, 7:15 PM'
-              },
-              '2026-10-18': {
-                mood: 'Calm',
-                proudMoments: [
-                  { id: 'pm-3', text: 'Took a 30-minute evening walk and did gentle neck stretches', tag: '🧠 Mindset' }
-                ],
-                proudReflection: 'Prioritized rest and recovery on Sunday evening so I could start Monday fresh.',
-                gratitude: 'Quiet Sunday evening and a supportive conversation with family.',
-                freeform: 'Mapped out my workout days for the week.',
-                updatedAt: 'Oct 18, 9:10 PM'
-              }
-            }
+            entries: {}
           }
         };
       }
@@ -2698,14 +2398,14 @@
           merged.account = Object.assign({}, def.account);
         }
 
-        // Preserve user's custom stretch sessions & sections
-        if (saved.daysData && typeof saved.daysData === 'object' && Object.keys(saved.daysData).length > 0) {
+        // Preserve user's custom stretch sessions & sections (can be empty if none created yet)
+        if (saved.daysData && typeof saved.daysData === 'object') {
           merged.daysData = saved.daysData;
         } else {
-          merged.daysData = def.daysData;
+          merged.daysData = {};
         }
         if (!merged.daysData[merged.selectedDay]) {
-          merged.selectedDay = Object.keys(merged.daysData)[0] || 'Monday';
+          merged.selectedDay = Object.keys(merged.daysData)[0] || '';
         }
 
         merged.personalLibrary = Array.isArray(saved.personalLibrary) ? saved.personalLibrary : def.personalLibrary;
@@ -3625,10 +3325,13 @@
           phaseBadge.textContent = 'Empty';
           queuePosEl.textContent = '0 of 0';
           titleEl.textContent = 'No Stretch Selected';
-          descEl.textContent = 'Add a stretch exercise to this day or pick one from your Personal Library.';
-          secBadgeEl.textContent = state.selectedDay;
+          descEl.textContent = 'Add a stretch exercise to this session or pick one from your Personal Library.';
+          secBadgeEl.textContent = state.selectedDay ? getSessionDisplayName(state.selectedDay) : 'No Session';
           targetBadgeEl.textContent = 'Custom';
-          imgEl.src = PRESET_ILLUSTRATIONS[0].url;
+          if (imgEl) {
+            imgEl.removeAttribute('src');
+            imgEl.classList.add('hidden');
+          }
           if (circle) circle.style.strokeDashoffset = '0';
           if (manualBanner) manualBanner.classList.add('hidden');
           return;
@@ -3638,7 +3341,15 @@
         queuePosEl.textContent = `Stretch ${currentQueueIndex + 1} of ${queue.length}`;
         countdownEl.textContent = formatMMSS(remainingSeconds);
 
-        imgEl.src = currentItem.image || PRESET_ILLUSTRATIONS[0].url;
+        if (imgEl) {
+          if (currentItem.image) {
+            imgEl.src = currentItem.image;
+            imgEl.classList.remove('hidden');
+          } else {
+            imgEl.removeAttribute('src');
+            imgEl.classList.add('hidden');
+          }
+        }
         secBadgeEl.textContent = currentItem.sectionName;
         targetBadgeEl.textContent = currentItem.targetArea || 'Full Body';
         titleEl.textContent = currentItem.name;
@@ -3801,13 +3512,8 @@
       function getStretchSessionKeys() {
         const keys = Object.keys(state.daysData || {});
         if (keys.length === 0) {
-          state.daysData['session-default'] = {
-            sessionName: 'Full-Body Mobility Session',
-            isWorkoutDay: true,
-            sections: []
-          };
-          state.selectedDay = 'session-default';
-          return ['session-default'];
+          state.selectedDay = '';
+          return [];
         }
         if (!state.daysData[state.selectedDay]) {
           state.selectedDay = keys[0];
@@ -3816,6 +3522,7 @@
       }
 
       function getSessionDisplayName(key) {
+        if (!key) return 'No Session Selected';
         const obj = state.daysData && state.daysData[key];
         if (obj && obj.sessionName && obj.sessionName.trim()) {
           return obj.sessionName.trim();
@@ -3837,40 +3544,55 @@
         const badge = document.getElementById('workoutDaysCountBadge');
         if (badge) badge.textContent = `${sessionKeys.length} Session${sessionKeys.length === 1 ? '' : 's'} (${workoutDaysCount} Active)`;
 
-        const activeDisplayName = getSessionDisplayName(state.selectedDay);
+        const activeDisplayName = sessionKeys.length > 0 ? getSessionDisplayName(state.selectedDay) : 'None yet — click + New Session';
         if (mobileDayLabel) mobileDayLabel.textContent = activeDisplayName;
-        const renameInput = document.getElementById('renameStretchSessionInput');
-        if (renameInput && document.activeElement !== renameInput) {
-          renameInput.value = activeDisplayName;
-        }
 
-        if (mobileWorkoutBtn && state.daysData[state.selectedDay]) {
-          const isW = state.daysData[state.selectedDay].isWorkoutDay;
-          mobileWorkoutBtn.textContent = isW ? '✓ Active Session' : 'Optional / Rest (Tap to Activate)';
-          mobileWorkoutBtn.className = isW
-            ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300'
-            : 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-300';
+        if (mobileWorkoutBtn) {
+          if (state.selectedDay && state.daysData[state.selectedDay]) {
+            mobileWorkoutBtn.classList.remove('hidden');
+            const isW = state.daysData[state.selectedDay].isWorkoutDay;
+            mobileWorkoutBtn.textContent = isW ? '✓ Active Session' : 'Optional / Rest (Tap to Activate)';
+            mobileWorkoutBtn.className = isW
+              ? 'hide-in-forced-mobile px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300'
+              : 'hide-in-forced-mobile px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-300';
+          } else {
+            mobileWorkoutBtn.classList.add('hidden');
+          }
         }
 
         if (mobileStrip) {
-          mobileStrip.innerHTML = sessionKeys.map(key => {
-            const isSelected = state.selectedDay === key;
-            const isW = state.daysData[key] && state.daysData[key].isWorkoutDay;
-            const sName = getSessionDisplayName(key);
-            return `
-              <button type="button" data-select-day="${escapeHtml(key)}" class="px-3.5 py-2 rounded-xl border text-left inline-flex items-center gap-2 w-auto max-w-full h-auto transition ${
-                isSelected
-                  ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
-                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
-              }">
-                <span class="w-2 h-2 rounded-full shrink-0 ${isW ? (isSelected ? 'bg-amber-300' : 'bg-emerald-500') : 'bg-slate-300'}"></span>
-                <span class="text-xs sm:text-sm font-extrabold whitespace-normal break-words leading-snug">${escapeHtml(sName)}</span>
-              </button>
-            `;
-          }).join('');
+          if (sessionKeys.length === 0) {
+            mobileStrip.innerHTML = `<span class="text-xs text-slate-400 italic py-1">No stretch sessions yet. Click <strong>+ New Session</strong> above to create one!</span>`;
+          } else {
+            mobileStrip.innerHTML = sessionKeys.map(key => {
+              const isSelected = state.selectedDay === key;
+              const isW = state.daysData[key] && state.daysData[key].isWorkoutDay;
+              const sName = getSessionDisplayName(key);
+              return `
+                <button type="button" data-select-day="${escapeHtml(key)}" class="px-3.5 py-2 rounded-xl border text-left inline-flex items-center gap-2 w-auto max-w-full h-auto transition ${
+                  isSelected
+                    ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
+                }">
+                  <span class="w-2 h-2 rounded-full shrink-0 ${isW ? (isSelected ? 'bg-amber-300' : 'bg-emerald-500') : 'bg-slate-300'}"></span>
+                  <span class="text-xs sm:text-sm font-extrabold whitespace-normal break-words leading-snug">${escapeHtml(sName)}</span>
+                </button>
+              `;
+            }).join('');
+          }
         }
 
         if (!grid) return;
+
+        if (sessionKeys.length === 0) {
+          grid.innerHTML = `
+            <div class="w-full p-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center space-y-2">
+              <p class="text-sm font-bold text-slate-700">No stretch sessions created yet.</p>
+              <p class="text-xs text-slate-500">Click <strong>+ Create New Session</strong> above to name a session and add your own stretches.</p>
+            </div>
+          `;
+          return;
+        }
 
         grid.innerHTML = sessionKeys.map((key) => {
           const dayInfo = state.daysData[key] || { isWorkoutDay: false, sections: [] };
@@ -3889,8 +3611,8 @@
                   <span class="font-display font-extrabold text-sm sm:text-base block whitespace-normal break-words leading-snug ${isSelected ? 'text-teal-950' : 'text-slate-800'}">${escapeHtml(sName)}</span>
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
-                  <button type="button" data-rename-session-card="${escapeHtml(key)}" class="px-1.5 py-1 rounded-lg bg-white/80 hover:bg-white text-slate-600 text-[11px] font-bold border border-slate-200" title="Rename this stretch session">
-                    ✏️
+                  <button type="button" data-rename-session-card="${escapeHtml(key)}" class="px-2 py-1 rounded-lg bg-white/80 hover:bg-white text-slate-600 text-[11px] font-bold border border-slate-200" title="Edit this stretch session">
+                    ✏️ Edit
                   </button>
                   <button type="button" data-delete-session-card="${escapeHtml(key)}" class="px-1.5 py-1 rounded-lg bg-white/80 hover:bg-rose-50 text-slate-500 hover:text-rose-600 text-[11px] font-bold border border-slate-200" title="Delete this stretch session">
                     🗑
@@ -3962,13 +3684,22 @@
 
         renderSectionFilterDropdowns();
 
-        if (!container || !dayObj) return;
+        if (!container) return;
+        if (!dayObj) {
+          container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center space-y-3">
+              <p class="text-sm font-bold text-slate-700">No stretch session created yet.</p>
+              <p class="text-xs text-slate-500">Click <strong>+ New Session</strong> above to create a session and add your own stretches from your Library or from scratch.</p>
+            </div>
+          `;
+          return;
+        }
 
         if (dayObj.sections.length === 0) {
           container.innerHTML = `
             <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center space-y-3">
-              <p class="text-sm font-bold text-slate-700">No sections created for ${state.selectedDay} yet.</p>
-              <p class="text-xs text-slate-500">Click "+ Add Day Section" above or pick a stretch from your Personal Library to automatically create a section.</p>
+              <p class="text-sm font-bold text-slate-700">No sections created for "${escapeHtml(sName)}" yet.</p>
+              <p class="text-xs text-slate-500">Click <strong>+ Add Stretch Exercise</strong> or <strong>+ Add Day Section</strong> above to add stretches to "${escapeHtml(sName)}".</p>
             </div>
           `;
           return;
@@ -4010,7 +3741,7 @@
                   return `
                     <div class="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition ${isCurrentlyLoaded ? 'bg-teal-50/50' : 'hover:bg-slate-50/70'}">
                       <div class="flex items-start gap-3 min-w-0">
-                        <img src="${str.image || PRESET_ILLUSTRATIONS[0].url}" alt="${escapeHtml(str.name)}" class="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0" />
+                        ${str.image ? `<img src="${str.image}" alt="${escapeHtml(str.name)}" data-edit-stretch="${str.id}" data-sec-id="${sec.id}" title="Tap to change image" class="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0 cursor-pointer hover:opacity-80 transition" />` : `<button type="button" data-edit-stretch="${str.id}" data-sec-id="${sec.id}" title="Add an image for this stretch" class="w-16 h-16 rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-teal-700 flex flex-col items-center justify-center text-[10px] font-bold shrink-0 transition"><span>📷</span><span>+ Image</span></button>`}
                         <div class="min-w-0 flex-1">
                           <div class="flex flex-wrap items-center gap-1.5">
                             <span class="font-bold text-sm sm:text-base text-slate-900">${escapeHtml(str.name)}</span>
@@ -4022,14 +3753,14 @@
                         </div>
                       </div>
 
-                      <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                      <div class="flex flex-wrap items-center gap-1.5 self-end sm:self-center shrink-0">
                         <button type="button" data-select-timer-stretch="${str.id}" class="px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition" title="Load and start this stretch">
                           ▶ Load
                         </button>
                         <button type="button" data-save-to-library="${str.id}" data-sec-id="${sec.id}" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold transition" title="Save to Personal Stretch Library">
                           ★ Library
                         </button>
-                        <button type="button" data-edit-stretch="${str.id}" data-sec-id="${sec.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                        <button type="button" data-edit-stretch="${str.id}" data-sec-id="${sec.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition" title="Edit stretch or change image">
                           Edit
                         </button>
                         <button type="button" data-delete-stretch="${str.id}" data-sec-id="${sec.id}" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition" title="Delete Stretch">
@@ -4075,20 +3806,25 @@
 
         grid.innerHTML = filtered.map(item => `
           <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white hover:shadow-sm transition flex items-start gap-3">
-            <img src="${item.image || PRESET_ILLUSTRATIONS[0].url}" alt="${escapeHtml(item.name)}" class="w-14 h-14 rounded-xl object-cover bg-white border border-slate-200 shrink-0" />
+            ${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}" data-edit-library-item="${item.id}" title="Tap to change image" class="w-14 h-14 rounded-xl object-cover bg-white border border-slate-200 shrink-0 cursor-pointer hover:opacity-80 transition" />` : `<button type="button" data-edit-library-item="${item.id}" title="Add image" class="w-14 h-14 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-100 text-slate-400 hover:text-teal-700 flex flex-col items-center justify-center text-[10px] font-bold shrink-0 transition"><span>📷</span><span>+ Image</span></button>`}
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-1">
                 <h4 class="font-bold text-xs sm:text-sm text-slate-900 truncate">${escapeHtml(item.name)}</h4>
                 <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">${item.duration}s</span>
               </div>
               <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-2">${escapeHtml(item.description || '')}</p>
-              <div class="flex items-center justify-between gap-2 mt-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mt-2.5">
                 <button type="button" data-quick-add-library="${item.id}" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] transition">
-                  + Add to ${state.selectedDay}
+                  + Add to ${state.selectedDay ? escapeHtml(getSessionDisplayName(state.selectedDay)) : 'Session'}
                 </button>
-                <button type="button" data-delete-library-item="${item.id}" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition">
-                  Remove
-                </button>
+                <div class="flex items-center gap-2">
+                  <button type="button" data-edit-library-item="${item.id}" class="text-[11px] font-semibold text-teal-700 hover:underline transition">
+                    📷 Edit / Image
+                  </button>
+                  <button type="button" data-delete-library-item="${item.id}" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition">
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -4098,25 +3834,19 @@
       // =====================================================================
       // STRETCH ADD/EDIT MODAL LOGIC
       // =====================================================================
-      let selectedModalImage = PRESET_ILLUSTRATIONS[0].url;
+      let selectedModalImage = '';
 
       function renderPresetIllustrationsInModal() {
-        const grid = document.getElementById('presetIllustrationsGrid');
         const preview = document.getElementById('modalStretchImagePreview');
-        if (preview) preview.src = selectedModalImage;
-        if (!grid) return;
-
-        grid.innerHTML = PRESET_ILLUSTRATIONS.map(p => {
-          const isSelected = selectedModalImage === p.url;
-          return `
-            <button type="button" data-pick-preset-img="${p.id}" class="p-1 rounded-xl border-2 transition flex flex-col items-center ${
-              isSelected ? 'border-teal-600 bg-teal-50' : 'border-slate-200 bg-white hover:border-slate-300'
-            }">
-              <img src="${p.url}" alt="${p.label}" class="w-12 h-12 rounded-lg object-cover" />
-              <span class="text-[10px] font-semibold text-slate-700 mt-1 truncate max-w-full">${p.label}</span>
-            </button>
-          `;
-        }).join('');
+        if (preview) {
+          if (selectedModalImage) {
+            preview.src = selectedModalImage;
+            preview.classList.remove('hidden');
+          } else {
+            preview.removeAttribute('src');
+            preview.classList.add('hidden');
+          }
+        }
       }
 
       function openStretchModal(options) {
@@ -4132,11 +3862,13 @@
         const targetSelect = document.getElementById('modalStretchTargetArea');
         const descInput = document.getElementById('modalStretchDescription');
         const urlInput = document.getElementById('modalStretchImageUrlInput');
+        const fileInput = document.getElementById('modalStretchImageFileInput');
         const saveLibWrapper = document.getElementById('modalSaveToLibraryWrapper');
         const saveLibCheck = document.getElementById('modalSaveToLibraryCheckbox');
+        if (fileInput) fileInput.value = '';
 
         const dayObj = state.daysData[state.selectedDay];
-        if (dayObj && dayObj.sections.length === 0 && !opts.isLibraryOnly) {
+        if (dayObj && dayObj.sections.length === 0 && !opts.isLibraryOnly && !opts.editLibraryStretch) {
           dayObj.sections.push({
             id: 'sec-' + Date.now(),
             name: 'Daily Stretch Routine',
@@ -4151,20 +3883,32 @@
           }
         }
 
-        if (opts.isLibraryOnly) {
+        if (opts.editLibraryStretch) {
+          titleEl.textContent = 'Edit Library Stretch & Image';
+          isLibInput.value = 'true';
+          editIdInput.value = opts.editLibraryStretch.id;
+          secWrapper.classList.add('hidden');
+          saveLibWrapper.classList.add('hidden');
+          nameInput.value = opts.editLibraryStretch.name || '';
+          durInput.value = String(opts.editLibraryStretch.duration || 45);
+          targetSelect.value = opts.editLibraryStretch.targetArea || 'Full Body';
+          descInput.value = opts.editLibraryStretch.description || '';
+          urlInput.value = (opts.editLibraryStretch.image && !opts.editLibraryStretch.image.startsWith('data:')) ? opts.editLibraryStretch.image : '';
+          selectedModalImage = opts.editLibraryStretch.image || '';
+        } else if (opts.isLibraryOnly) {
           titleEl.textContent = 'Add Stretch to Personal Library';
           isLibInput.value = 'true';
           editIdInput.value = '';
           secWrapper.classList.add('hidden');
           saveLibWrapper.classList.add('hidden');
           nameInput.value = '';
-          durInput.value = '45';
+          durInput.value = '';
           targetSelect.value = 'Spine & Back';
           descInput.value = '';
           urlInput.value = '';
-          selectedModalImage = PRESET_ILLUSTRATIONS[0].url;
+          selectedModalImage = '';
         } else if (opts.editStretch) {
-          titleEl.textContent = 'Edit Stretch Exercise';
+          titleEl.textContent = 'Edit Stretch Exercise & Image';
           isLibInput.value = 'false';
           editIdInput.value = opts.editStretch.id;
           secWrapper.classList.remove('hidden');
@@ -4174,21 +3918,21 @@
           durInput.value = String(opts.editStretch.duration || 45);
           targetSelect.value = opts.editStretch.targetArea || 'Full Body';
           descInput.value = opts.editStretch.description || '';
-          urlInput.value = '';
-          selectedModalImage = opts.editStretch.image || PRESET_ILLUSTRATIONS[0].url;
+          urlInput.value = (opts.editStretch.image && !opts.editStretch.image.startsWith('data:')) ? opts.editStretch.image : '';
+          selectedModalImage = opts.editStretch.image || '';
         } else {
-          titleEl.textContent = `Add Stretch to ${state.selectedDay}`;
+          titleEl.textContent = state.selectedDay ? `Add Stretch to ${getSessionDisplayName(state.selectedDay)}` : 'Add Stretch Exercise';
           isLibInput.value = 'false';
           editIdInput.value = '';
           secWrapper.classList.remove('hidden');
           saveLibWrapper.classList.remove('hidden');
           saveLibCheck.checked = false;
           nameInput.value = '';
-          durInput.value = '45';
+          durInput.value = '';
           targetSelect.value = 'Spine & Back';
           descInput.value = '';
           urlInput.value = '';
-          selectedModalImage = PRESET_ILLUSTRATIONS[0].url;
+          selectedModalImage = '';
         }
 
         renderPresetIllustrationsInModal();
@@ -4465,14 +4209,7 @@
       // =====================================================================
       // SECTION 3: DAILY DIARY & PROUD MOMENTS PAGE
       // =====================================================================
-      const MOOD_OPTIONS = [
-        { id: 'Energized', emoji: '⚡', label: 'Energized' },
-        { id: 'Proud', emoji: '🏆', label: 'Proud' },
-        { id: 'Calm', emoji: '🌿', label: 'Calm' },
-        { id: 'Grateful', emoji: '💛', label: 'Grateful' },
-        { id: 'Tired', emoji: '🌙', label: 'Tired' },
-        { id: 'Resilient', emoji: '🔥', label: 'Resilient' }
-      ];
+      const MOOD_OPTIONS = [];
 
       function parseIsoLocal(isoStr) {
         const parts = (isoStr || TODAY_ISO).split('-').map(Number);
@@ -4610,37 +4347,84 @@
           }
         }
 
-        // Populate Proud Win Categories (Preset + User Custom Categories)
-        const tagSelect = document.getElementById('newProudMomentTag');
-        if (tagSelect) {
-          const cats = state.diary.customProudCategories || [
+        // Populate & Manage Proud Win Categories (All categories are removable!)
+        if (!Array.isArray(state.diary.customProudCategories)) {
+          state.diary.customProudCategories = [
             '🌟 Consistency', '💪 Body & Health', '🧠 Mindset', '💛 Kindness', '🚀 Milestone'
           ];
+        }
+        const cats = state.diary.customProudCategories;
+        const tagSelect = document.getElementById('newProudMomentTag');
+        if (tagSelect) {
           const prevVal = tagSelect.value;
-          tagSelect.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-          if (cats.includes(prevVal)) tagSelect.value = prevVal;
+          if (cats.length === 0) {
+            tagSelect.innerHTML = `<option value="">No Category</option>`;
+          } else {
+            tagSelect.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (cats.includes(prevVal)) tagSelect.value = prevVal;
+          }
+        }
+        const catsManageEl = document.getElementById('proudCategoriesManageList');
+        if (catsManageEl) {
+          if (cats.length === 0) {
+            catsManageEl.innerHTML = `<span class="text-[11px] text-slate-400 italic">All categories removed. Add your own category above anytime!</span>`;
+          } else {
+            catsManageEl.innerHTML = cats.map(c => `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900">
+                <span>${escapeHtml(c)}</span>
+                <button type="button" data-delete-proud-category="${escapeHtml(c)}" class="text-amber-700 hover:text-rose-600 font-extrabold px-0.5" title="Remove category">✕</button>
+              </span>
+            `).join('');
+          }
         }
 
-        // Populate Feelings / Moods (Preset + User Custom Feelings)
+        // Populate & Manage Feelings / Moods (All feelings are removable!)
+        if (!state.diary.moodsInitializedV12) {
+          const existingCustom = Array.isArray(state.diary.customMoods) ? state.diary.customMoods : [];
+          const defaults = [
+            { id: 'Energized', emoji: '⚡', label: 'Energized', custom: true },
+            { id: 'Proud', emoji: '🏆', label: 'Proud', custom: true },
+            { id: 'Calm', emoji: '🌿', label: 'Calm', custom: true },
+            { id: 'Grateful', emoji: '💛', label: 'Grateful', custom: true },
+            { id: 'Tired', emoji: '🌙', label: 'Tired', custom: true },
+            { id: 'Resilient', emoji: '🔥', label: 'Resilient', custom: true }
+          ];
+          const merged = defaults.slice();
+          existingCustom.forEach(cm => {
+            if (cm && cm.id && !merged.some(d => d.id.toLowerCase() === cm.id.toLowerCase())) {
+              merged.push({ ...cm, custom: true });
+            }
+          });
+          state.diary.customMoods = merged;
+          state.diary.moodsInitializedV12 = true;
+        }
         const moodContainer = document.getElementById('diaryMoodButtonsContainer');
         if (moodContainer) {
-          const allMoods = MOOD_OPTIONS.concat(state.diary.customMoods || []);
-          moodContainer.innerHTML = allMoods.map(m => {
-            const active = entry.mood === m.id;
-            return `
-              <div class="relative group">
-                <button type="button" data-select-mood="${escapeHtml(m.id)}" class="w-full py-2.5 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition hover-lift ${
-                  active
-                    ? 'border-teal-600 bg-teal-50 text-teal-900 shadow-sm'
-                    : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
-                }">
-                  ${m.emoji && m.emoji.trim() ? `<span class="text-base">${escapeHtml(m.emoji.trim())}</span>` : ''}
-                  <span class="truncate max-w-full">${escapeHtml(m.label)}</span>
-                </button>
-                ${m.custom ? `<button type="button" data-delete-custom-mood="${escapeHtml(m.id)}" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold hidden group-hover:flex items-center justify-center shadow" title="Delete custom feeling">✕</button>` : ''}
+          const allMoods = state.diary.customMoods || [];
+          if (allMoods.length === 0) {
+            moodContainer.innerHTML = `
+              <div class="col-span-full p-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">
+                All feelings removed. Add your own feelings below anytime!
               </div>
             `;
-          }).join('');
+          } else {
+            moodContainer.innerHTML = allMoods.map(m => {
+              const active = entry.mood === m.id;
+              return `
+                <div class="relative group">
+                  <button type="button" data-select-mood="${escapeHtml(m.id)}" class="w-full py-2.5 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition hover-lift ${
+                    active
+                      ? 'border-teal-600 bg-teal-50 text-teal-900 shadow-sm'
+                      : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
+                  }">
+                    ${m.emoji && m.emoji.trim() ? `<span class="text-base">${escapeHtml(m.emoji.trim())}</span>` : ''}
+                    <span class="truncate max-w-full pr-2">${escapeHtml(m.label)}</span>
+                  </button>
+                  <button type="button" data-delete-custom-mood="${escapeHtml(m.id)}" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-200 hover:bg-rose-500 text-slate-600 hover:text-white text-[10px] font-extrabold flex items-center justify-center shadow-sm transition" title="Remove feeling">✕</button>
+                </div>
+              `;
+            }).join('');
+          }
         }
 
         // Dynamic Prompt Sections (Only renders sections for prompts chosen for this day!)
@@ -5036,7 +4820,7 @@
           const dayObj = state.daysData[state.selectedDay];
           if (dayObj) {
             dayObj.isWorkoutDay = !dayObj.isWorkoutDay;
-            saveState(`${state.selectedDay} marked as ${dayObj.isWorkoutDay ? 'Workout Day' : 'Rest Day'}`);
+            saveState(`"${getSessionDisplayName(state.selectedDay)}" marked as ${dayObj.isWorkoutDay ? 'Workout Day' : 'Rest Day'}`);
             renderAll();
           }
         });
@@ -5053,14 +4837,162 @@
           applyNavigationAndMode();
         });
 
-        function openSessionManagerBar(focusInputId) {
+        // Separate Edit Section Panel vs Dedicated Create New Session Tab (Never opens Edit when creating a New Session!)
+        let newSessionDraftStretches = [];
+        let newSessionActiveSubtab = 'new'; // 'new' | 'lib'
+        let newSessionSelectedStretchImg = '';
+
+        function renderNewSessionPresetImgGrid() {
+          const grid = document.getElementById('newSessionPresetImgGrid');
+          const preview = document.getElementById('newSessionStretchImgPreview');
+          if (preview) {
+            if (newSessionSelectedStretchImg) {
+              preview.src = newSessionSelectedStretchImg;
+              preview.classList.remove('hidden');
+            } else {
+              preview.removeAttribute('src');
+              preview.classList.add('hidden');
+            }
+          }
+          if (!grid) return;
+          grid.innerHTML = PRESET_ILLUSTRATIONS.map(p => {
+            const isSelected = newSessionSelectedStretchImg === p.url;
+            return `
+              <button type="button" data-new-session-pick-preset="${p.id}" class="p-1.5 rounded-xl border-2 transition flex flex-col items-center text-center ${
+                isSelected ? 'border-teal-600 bg-teal-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
+              }">
+                <img src="${p.url}" alt="${escapeHtml(p.label)}" class="w-12 h-12 rounded-lg object-cover" />
+                <span class="text-[10px] font-bold text-slate-800 mt-1 leading-tight line-clamp-2">${escapeHtml(p.label)}</span>
+              </button>
+            `;
+          }).join('');
+        }
+
+        function renderNewSessionBuilderTab() {
+          const newBtn = document.getElementById('newSessionSubtabNewBtn');
+          const libBtn = document.getElementById('newSessionSubtabLibBtn');
+          const newPanel = document.getElementById('newSessionSubtabNewPanel');
+          const libPanel = document.getElementById('newSessionSubtabLibPanel');
+          const draftListEl = document.getElementById('newSessionDraftStretchesList');
+          const countBadge = document.getElementById('newSessionDraftCountBadge');
+          renderNewSessionPresetImgGrid();
+
+          if (newBtn && libBtn && newPanel && libPanel) {
+            if (newSessionActiveSubtab === 'new') {
+              newPanel.classList.remove('hidden');
+              libPanel.classList.add('hidden');
+              newBtn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-teal-700 shadow-sm';
+              libBtn.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600';
+            } else {
+              newPanel.classList.add('hidden');
+              libPanel.classList.remove('hidden');
+              libBtn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-teal-700 shadow-sm';
+              newBtn.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600';
+
+              const libItems = state.personalLibrary || [];
+              if (libItems.length === 0) {
+                libPanel.innerHTML = `<p class="text-xs text-slate-400 italic py-2">Your Personal Library is empty. Switch to "+ Add New Stretch" and check "Save to Library" to build your library!</p>`;
+              } else {
+                libPanel.innerHTML = libItems.map(item => `
+                  <div class="flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 bg-slate-50">
+                    <div class="min-w-0 flex-1">
+                      <span class="text-xs font-bold text-slate-900">${escapeHtml(item.name)}</span>
+                      <span class="text-[11px] text-teal-700 font-semibold ml-1">(${item.duration}s • ${escapeHtml(item.targetArea || 'Full Body')})</span>
+                    </div>
+                    <button type="button" data-add-lib-to-draft="${escapeHtml(item.id)}" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0">
+                      + Add
+                    </button>
+                  </div>
+                `).join('');
+              }
+            }
+          }
+
+          if (countBadge) {
+            countBadge.textContent = `${newSessionDraftStretches.length} added`;
+          }
+          if (draftListEl) {
+            if (newSessionDraftStretches.length === 0) {
+              draftListEl.innerHTML = `<p class="text-xs text-slate-400 italic">No stretches added yet. Add your own stretches above or create the session empty.</p>`;
+            } else {
+              draftListEl.innerHTML = newSessionDraftStretches.map((st, idx) => `
+                <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-teal-50/70 border border-teal-200 text-xs">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    ${st.image ? `<img src="${st.image}" alt="${escapeHtml(st.name)}" class="w-10 h-10 rounded-lg object-cover bg-white border border-slate-200 shrink-0" />` : ''}
+                    <span class="font-bold text-slate-800 break-words">${idx + 1}. ${escapeHtml(st.name)} <span class="text-teal-700 font-semibold">(${st.duration}s • ${escapeHtml(st.targetArea)})</span></span>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <label class="cursor-pointer px-2 py-1 rounded-lg bg-white border border-teal-200 hover:bg-teal-100 text-teal-800 text-[11px] font-bold" title="Add or change image for this stretch">
+                      <span>📷 ${st.image ? 'Change Image' : '+ Image'}</span>
+                      <input type="file" accept="image/*" data-change-draft-stretch-img="${idx}" class="hidden" />
+                    </label>
+                    ${st.image ? `<button type="button" data-clear-draft-stretch-img="${idx}" class="text-slate-400 hover:text-rose-600 text-[11px] font-bold px-1" title="Remove image">🚫</button>` : ''}
+                    <button type="button" data-remove-draft-stretch="${idx}" class="text-slate-400 hover:text-rose-600 font-bold px-1.5 shrink-0" title="Remove stretch">✕</button>
+                  </div>
+                </div>
+              `).join('');
+            }
+          }
+        }
+
+        function openEditSessionOnlyBar() {
+          if (!state.selectedDay || !state.daysData[state.selectedDay]) {
+            showToast('No session selected to edit — create a new session first!');
+            openCreateNewSessionTab();
+            return;
+          }
+          // Hide Create New Session tab so only Edit Section is open
+          const createTab = document.getElementById('createNewSessionTabPanel');
+          if (createTab) createTab.classList.add('hidden');
+
           const bar = document.getElementById('sessionManagerInlineBar');
           if (bar) {
             bar.classList.remove('hidden');
             const renameIn = document.getElementById('renameStretchSessionInput');
-            if (renameIn) renameIn.value = getSessionDisplayName(state.selectedDay);
-            const target = document.getElementById(focusInputId || 'renameStretchSessionInput');
-            if (target) target.focus();
+            if (renameIn) {
+              renameIn.value = getSessionDisplayName(state.selectedDay);
+              renameIn.focus();
+            }
+          }
+        }
+
+        function openCreateNewSessionTab() {
+          // Hide Edit Section bar so Rename/Edit NEVER opens when creating a new session!
+          const editBar = document.getElementById('sessionManagerInlineBar');
+          if (editBar) editBar.classList.add('hidden');
+
+          newSessionDraftStretches = [];
+          newSessionActiveSubtab = 'new';
+          newSessionSelectedStretchImg = '';
+          const nameIn = document.getElementById('newStretchSessionNameInput');
+          const cName = document.getElementById('newSessionCustomStretchName');
+          const cDur = document.getElementById('newSessionCustomStretchDuration');
+          const cDesc = document.getElementById('newSessionCustomStretchDesc');
+          const cImgUrl = document.getElementById('newSessionStretchImgUrlInput');
+          if (nameIn) nameIn.value = '';
+          if (cName) cName.value = '';
+          if (cDur) cDur.value = '';
+          if (cDesc) cDesc.value = '';
+          if (cImgUrl) cImgUrl.value = '';
+
+          renderNewSessionBuilderTab();
+          const createTab = document.getElementById('createNewSessionTabPanel');
+          if (createTab) {
+            createTab.classList.remove('hidden');
+            if (nameIn) nameIn.focus();
+          }
+        }
+
+        function closeCreateNewSessionTab() {
+          const createTab = document.getElementById('createNewSessionTabPanel');
+          if (createTab) createTab.classList.add('hidden');
+        }
+
+        function openSessionManagerBar(focusInputId) {
+          if (focusInputId === 'newStretchSessionNameInput') {
+            openCreateNewSessionTab();
+          } else {
+            openEditSessionOnlyBar();
           }
         }
 
@@ -5070,15 +5002,7 @@
           delete state.daysData[keyToDelete];
           const remaining = Object.keys(state.daysData);
           if (remaining.length === 0) {
-            const freshKey = 'session-' + Date.now();
-            state.daysData[freshKey] = {
-              sessionName: 'My Custom Stretch Session',
-              isWorkoutDay: true,
-              sections: [
-                { id: 'sec-' + Date.now(), name: 'Main Routine', stretches: [] }
-              ]
-            };
-            state.selectedDay = freshKey;
+            state.selectedDay = '';
           } else if (state.selectedDay === keyToDelete) {
             state.selectedDay = remaining[0];
           }
@@ -5090,12 +5014,176 @@
           renderAll();
         }
 
-        document.getElementById('quickRenameSessionTopBtn').addEventListener('click', () => openSessionManagerBar('renameStretchSessionInput'));
-        document.getElementById('quickNewSessionTopBtn').addEventListener('click', () => openSessionManagerBar('newStretchSessionNameInput'));
-        document.getElementById('openSessionManagerCardBtn').addEventListener('click', () => openSessionManagerBar('newStretchSessionNameInput'));
-        document.getElementById('routineHeaderRenameSessionBtn').addEventListener('click', () => openSessionManagerBar('renameStretchSessionInput'));
+        document.getElementById('quickRenameSessionTopBtn').addEventListener('click', openEditSessionOnlyBar);
+        document.getElementById('routineHeaderRenameSessionBtn').addEventListener('click', openEditSessionOnlyBar);
+        document.getElementById('quickNewSessionTopBtn').addEventListener('click', openCreateNewSessionTab);
+        document.getElementById('openSessionManagerCardBtn').addEventListener('click', openCreateNewSessionTab);
         document.getElementById('closeSessionManagerBarBtn').addEventListener('click', () => {
           document.getElementById('sessionManagerInlineBar').classList.add('hidden');
+        });
+        document.getElementById('closeCreateNewSessionTabBtn').addEventListener('click', closeCreateNewSessionTab);
+        document.getElementById('cancelCreateNewSessionTabBtn').addEventListener('click', closeCreateNewSessionTab);
+
+        document.getElementById('newSessionSubtabNewBtn').addEventListener('click', () => {
+          newSessionActiveSubtab = 'new';
+          renderNewSessionBuilderTab();
+        });
+        document.getElementById('newSessionSubtabLibBtn').addEventListener('click', () => {
+          newSessionActiveSubtab = 'lib';
+          renderNewSessionBuilderTab();
+        });
+
+        document.getElementById('addCustomStretchToNewSessionBtn').addEventListener('click', () => {
+          const cName = document.getElementById('newSessionCustomStretchName');
+          const cDur = document.getElementById('newSessionCustomStretchDuration');
+          const cArea = document.getElementById('newSessionCustomStretchArea');
+          const cDesc = document.getElementById('newSessionCustomStretchDesc');
+          const saveLib = document.getElementById('newSessionSaveStretchToLibCheck');
+
+          const name = cName ? cName.value.trim() : '';
+          if (!name) {
+            showToast('Enter a stretch name first');
+            if (cName) cName.focus();
+            return;
+          }
+          const duration = Math.max(5, parseInt(cDur && cDur.value, 10) || 45);
+          const targetArea = cArea ? cArea.value : 'Full Body';
+          const description = cDesc ? cDesc.value.trim() : '';
+
+          const chosenImage = newSessionSelectedStretchImg || '';
+          const stretchObj = {
+            id: 'str-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            name,
+            duration,
+            targetArea,
+            description,
+            image: chosenImage
+          };
+          newSessionDraftStretches.push(stretchObj);
+
+          if (saveLib && saveLib.checked) {
+            state.personalLibrary.unshift({
+              id: 'lib-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+              name,
+              duration,
+              targetArea,
+              description,
+              image: chosenImage
+            });
+          }
+
+          newSessionSelectedStretchImg = '';
+          const cImgUrl = document.getElementById('newSessionStretchImgUrlInput');
+          if (cName) cName.value = '';
+          if (cDur) cDur.value = '';
+          if (cDesc) cDesc.value = '';
+          if (cImgUrl) cImgUrl.value = '';
+          renderNewSessionBuilderTab();
+          renderPersonalLibrary();
+          showToast(`Added "${name}" to new session`);
+        });
+
+        // Image Picker events inside Create New Session tab
+        document.getElementById('newSessionPresetImgGrid').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-new-session-pick-preset]');
+          if (!btn) return;
+          const id = btn.getAttribute('data-new-session-pick-preset');
+          const found = PRESET_ILLUSTRATIONS.find(p => p.id === id);
+          if (found) {
+            newSessionSelectedStretchImg = found.url;
+            const cName = document.getElementById('newSessionCustomStretchName');
+            const cDur = document.getElementById('newSessionCustomStretchDuration');
+            const cArea = document.getElementById('newSessionCustomStretchArea');
+            const cDesc = document.getElementById('newSessionCustomStretchDesc');
+            if (cName && !cName.value.trim()) cName.value = found.label;
+            if (cDur && !cDur.value.trim() && found.defaultDuration) cDur.value = String(found.defaultDuration);
+            if (cArea && found.targetArea) cArea.value = found.targetArea;
+            if (cDesc && !cDesc.value.trim() && found.defaultDesc) cDesc.value = found.defaultDesc;
+            renderNewSessionPresetImgGrid();
+          }
+        });
+
+        document.getElementById('newSessionStretchImgUrlInput').addEventListener('input', (e) => {
+          const val = e.target.value.trim();
+          newSessionSelectedStretchImg = val;
+          renderNewSessionPresetImgGrid();
+        });
+
+        document.getElementById('newSessionStretchImgFileInput').addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            if (evt.target && evt.target.result) {
+              newSessionSelectedStretchImg = evt.target.result;
+              renderNewSessionPresetImgGrid();
+              showToast('Stretch image uploaded ✓');
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+
+        document.getElementById('newSessionClearImageBtn').addEventListener('click', () => {
+          newSessionSelectedStretchImg = '';
+          const cImgUrl = document.getElementById('newSessionStretchImgUrlInput');
+          if (cImgUrl) cImgUrl.value = '';
+          renderNewSessionPresetImgGrid();
+        });
+
+        document.getElementById('newSessionSubtabLibPanel').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-add-lib-to-draft]');
+          if (!btn) return;
+          const libId = btn.getAttribute('data-add-lib-to-draft');
+          const item = (state.personalLibrary || []).find(x => x.id === libId);
+          if (item) {
+            newSessionDraftStretches.push({
+              id: 'str-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+              name: item.name,
+              duration: Number(item.duration) || 45,
+              targetArea: item.targetArea || 'Full Body',
+              description: item.description || '',
+              image: item.image || ''
+            });
+            renderNewSessionBuilderTab();
+            showToast(`Added "${item.name}" from Library`);
+          }
+        });
+
+        document.getElementById('newSessionDraftStretchesList').addEventListener('click', (e) => {
+          const clearImgBtn = e.target.closest('[data-clear-draft-stretch-img]');
+          if (clearImgBtn) {
+            const idx = parseInt(clearImgBtn.getAttribute('data-clear-draft-stretch-img'), 10);
+            if (!isNaN(idx) && newSessionDraftStretches[idx]) {
+              newSessionDraftStretches[idx].image = '';
+              renderNewSessionBuilderTab();
+            }
+            return;
+          }
+          const rmBtn = e.target.closest('[data-remove-draft-stretch]');
+          if (!rmBtn) return;
+          const idx = parseInt(rmBtn.getAttribute('data-remove-draft-stretch'), 10);
+          if (!isNaN(idx)) {
+            newSessionDraftStretches.splice(idx, 1);
+            renderNewSessionBuilderTab();
+          }
+        });
+
+        document.getElementById('newSessionDraftStretchesList').addEventListener('change', (e) => {
+          const fileIn = e.target.closest('[data-change-draft-stretch-img]');
+          if (!fileIn) return;
+          const idx = parseInt(fileIn.getAttribute('data-change-draft-stretch-img'), 10);
+          const file = fileIn.files && fileIn.files[0];
+          if (!isNaN(idx) && file && newSessionDraftStretches[idx]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+              if (evt.target && evt.target.result && newSessionDraftStretches[idx]) {
+                newSessionDraftStretches[idx].image = evt.target.result;
+                renderNewSessionBuilderTab();
+                showToast('Stretch image updated ✓');
+              }
+            };
+            reader.readAsDataURL(file);
+          }
         });
 
         document.getElementById('renameStretchSessionForm').addEventListener('submit', (e) => {
@@ -5106,7 +5194,7 @@
           if (state.daysData[state.selectedDay]) {
             state.daysData[state.selectedDay].sessionName = newName;
             document.getElementById('sessionManagerInlineBar').classList.add('hidden');
-            saveState(`Session renamed to "${newName}" ✓`);
+            saveState(`Updated name to "${newName}" ✓`);
             renderAll();
           }
         });
@@ -5120,32 +5208,26 @@
           state.daysData[newKey] = {
             sessionName: newName,
             isWorkoutDay: true,
-            sections: [
-              {
-                id: 'sec-' + Date.now(),
-                name: 'Warmup & Mobility',
-                stretches: [
+            sections: newSessionDraftStretches.length > 0
+              ? [
                   {
-                    id: 'str-' + Date.now(),
-                    name: 'Cat-Cow Spinal Waves',
-                    duration: 45,
-                    targetArea: 'Spine & Back',
-                    description: 'Smooth spinal flexion and extension with deep breaths.',
-                    image: PRESET_ILLUSTRATIONS[0].url
+                    id: 'sec-' + Date.now(),
+                    name: newName,
+                    stretches: newSessionDraftStretches.slice()
                   }
                 ]
-              }
-            ]
+              : []
           };
+          newSessionDraftStretches = [];
           stopTimerInterval();
           state.selectedDay = newKey;
           state.selectedSectionFilter = 'ALL';
           currentQueueIndex = 0;
           input.value = '';
-          document.getElementById('sessionManagerInlineBar').classList.add('hidden');
+          closeCreateNewSessionTab();
           triggerCelebrationBurst();
           syncTimerToCurrentStretch(true);
-          saveState(`Created new stretch session "${newName}" 🎉`);
+          saveState(`Created stretch session "${newName}" 🎉`);
           renderAll();
         });
 
@@ -5224,7 +5306,7 @@
           const dayObj = state.daysData[state.selectedDay];
           if (dayObj) {
             dayObj.isWorkoutDay = !dayObj.isWorkoutDay;
-            saveState(`${state.selectedDay} workout status updated`);
+            saveState(`"${getSessionDisplayName(state.selectedDay)}" workout status updated`);
             renderAll();
           }
         });
@@ -5403,7 +5485,7 @@
             });
             input.value = '';
             document.getElementById('inlineAddSectionBox').classList.add('hidden');
-            saveState(`Added section "${name}" to ${state.selectedDay}`);
+            saveState(`Added section "${name}" to "${getSessionDisplayName(state.selectedDay)}"`);
             renderAll();
           }
         });
@@ -5428,16 +5510,32 @@
           const found = PRESET_ILLUSTRATIONS.find(p => p.id === id);
           if (found) {
             selectedModalImage = found.url;
+            const nameIn = document.getElementById('modalStretchName');
+            const durIn = document.getElementById('modalStretchDuration');
+            const areaIn = document.getElementById('modalStretchTargetArea');
+            const descIn = document.getElementById('modalStretchDescription');
+            if (nameIn && !nameIn.value.trim()) nameIn.value = found.label;
+            if (durIn && !durIn.value.trim() && found.defaultDuration) durIn.value = String(found.defaultDuration);
+            if (areaIn && found.targetArea) areaIn.value = found.targetArea;
+            if (descIn && !descIn.value.trim() && found.defaultDesc) descIn.value = found.defaultDesc;
             renderPresetIllustrationsInModal();
           }
         });
 
+        const modalClearImgBtn = document.getElementById('modalClearImageBtn');
+        if (modalClearImgBtn) {
+          modalClearImgBtn.addEventListener('click', () => {
+            selectedModalImage = '';
+            const urlIn = document.getElementById('modalStretchImageUrlInput');
+            if (urlIn) urlIn.value = '';
+            renderPresetIllustrationsInModal();
+          });
+        }
+
         document.getElementById('modalStretchImageUrlInput').addEventListener('input', (e) => {
           const val = e.target.value.trim();
-          if (val) {
-            selectedModalImage = val;
-            document.getElementById('modalStretchImagePreview').src = val;
-          }
+          selectedModalImage = val;
+          renderPresetIllustrationsInModal();
         });
 
         document.getElementById('modalStretchImageFileInput').addEventListener('change', (e) => {
@@ -5447,7 +5545,7 @@
           reader.onload = function(evt) {
             if (evt.target && evt.target.result) {
               selectedModalImage = evt.target.result;
-              document.getElementById('modalStretchImagePreview').src = selectedModalImage;
+              renderPresetIllustrationsInModal();
               showToast('Picture uploaded ✓');
             }
           };
@@ -5469,6 +5567,23 @@
           if (!name) return;
 
           if (isLibOnly) {
+            if (editId) {
+              const libIdx = state.personalLibrary.findIndex(item => item.id === editId);
+              if (libIdx !== -1) {
+                state.personalLibrary[libIdx] = {
+                  ...state.personalLibrary[libIdx],
+                  name,
+                  duration,
+                  targetArea,
+                  description,
+                  image: selectedModalImage
+                };
+              }
+              closeStretchModal();
+              saveState(`Updated "${name}" in Personal Library`);
+              renderAll();
+              return;
+            }
             state.personalLibrary.unshift({
               id: 'lib-' + Date.now(),
               name,
@@ -5676,8 +5791,18 @@
               image: item.image
             });
             syncTimerToCurrentStretch(false);
-            saveState(`Added "${item.name}" to ${state.selectedDay} (${sec.name})`);
+            saveState(`Added "${item.name}" to "${getSessionDisplayName(state.selectedDay)}" (${sec.name})`);
             renderAll();
+            return;
+          }
+
+          const editLibBtn = e.target.closest('[data-edit-library-item]');
+          if (editLibBtn) {
+            const libId = editLibBtn.getAttribute('data-edit-library-item');
+            const item = state.personalLibrary.find(i => i.id === libId);
+            if (item) {
+              openStretchModal({ editLibraryStretch: item });
+            }
             return;
           }
 
@@ -5748,7 +5873,7 @@
             if (objIn) objIn.value = '';
             if (milesIn) milesIn.value = '';
             if (catIn) catIn.value = 'Movement';
-            if (targetIn) targetIn.value = '5';
+            if (targetIn) targetIn.value = '';
           }
           if (overview) overview.classList.add('hidden');
           if (createPage) createPage.classList.remove('hidden');
@@ -6508,12 +6633,26 @@
             return;
           }
 
+          const delProudCatBtn = e.target.closest('[data-delete-proud-category]');
+          if (delProudCatBtn) {
+            e.stopPropagation();
+            const catToRemove = delProudCatBtn.getAttribute('data-delete-proud-category');
+            state.diary.customProudCategories = (state.diary.customProudCategories || []).filter(c => c !== catToRemove);
+            saveState(`Removed category "${catToRemove}"`);
+            renderDiaryPage();
+            return;
+          }
+
           const delCustomMoodBtn = e.target.closest('[data-delete-custom-mood]');
           if (delCustomMoodBtn) {
             e.stopPropagation();
             const id = delCustomMoodBtn.getAttribute('data-delete-custom-mood');
             state.diary.customMoods = (state.diary.customMoods || []).filter(m => m.id !== id);
-            saveState('Custom feeling removed');
+            const entry = ensureDiaryEntry(state.diary.selectedDate);
+            if (entry && entry.mood === id) {
+              entry.mood = '';
+            }
+            saveState(`Removed feeling "${id}"`);
             renderDiaryPage();
             return;
           }
@@ -6715,8 +6854,15 @@
             const localRecord = localRegistry[cleanEmail] || (await idbGet('account_' + cleanEmail));
 
             if (currentAuthMode === 'signup') {
-              // SIGN UP MODE: Create or update account in Cloud + IndexedDB + Permanent Registry
-              const chosenName = fullName || (cloudRecord && cloudRecord.name) || (localRecord && localRecord.name) || rawEmail.split('@')[0];
+              // SIGN UP MODE: Block if this email already has an account in Cloud or Local Registry!
+              if (cloudRecord || localRecord) {
+                showAuthFeedback('This email already has an account. Please switch to Login to sign in.', true);
+                showToast('This email already has an account');
+                submitBtn.textContent = origBtnText;
+                submitBtn.disabled = false;
+                return;
+              }
+              const chosenName = fullName || rawEmail.split('@')[0];
               state.account = {
                 isLoggedIn: true,
                 name: chosenName,
@@ -6756,36 +6902,10 @@
                 : (cloudRecord || localRecord);
 
               if (!bestRecord) {
-                // Seamless Cross-Device Provisioning: If this device hasn't cached the account yet
-                // (or if a browser blocker prevented the initial cloud mirror read), initialize and sign in
-                // with this email & password on this device and push to Cloud immediately!
-                const fallbackName = fullName || rawEmail.split('@')[0];
-                state.account = {
-                  isLoggedIn: true,
-                  name: fallbackName,
-                  email: rawEmail,
-                  phone: state.account.phone || '',
-                  focusGoal: state.account.focusGoal || 'Daily Mobility & Mindful Meal Prep',
-                  passwordHash: pwHash,
-                  rememberMe: remember,
-                  autoCloudSync: autoSync,
-                  lastSyncedAt: 'Cloud & Device • Just now'
-                };
-                const newRec = {
-                  email: cleanEmail,
-                  name: fallbackName,
-                  passwordHash: pwHash,
-                  updatedAtMs: Date.now(),
-                  stateSnapshot: state
-                };
-                saveLocalAccountRecord(cleanEmail, newRec);
-                if (remember) {
-                  localStorage.setItem(ACTIVE_SESSION_EMAIL_KEY, cleanEmail);
-                }
-                await pushAccountRecordToCloud(cleanEmail, newRec);
-                showAuthFeedback(`☁️ Signed in as ${fallbackName} (${rawEmail}) & linked to Cloud Vault on this device!`, false);
-                saveState(`Signed in as ${fallbackName} — synced ✓`);
-                renderAll();
+                showAuthFeedback('No account found for this email. Please switch to Sign Up to create an account.', true);
+                showToast('No account found for this email');
+                submitBtn.textContent = origBtnText;
+                submitBtn.disabled = false;
                 return;
               }
 
@@ -6893,54 +7013,61 @@
             `— FlowSpace Account Security Team`
           ].join('\n');
 
-          // Populate the Formatted Password Reset Email preview card
+          // Keep the on-website code preview hidden so the verification code is NEVER shown on the website!
           const emailContainer = document.getElementById('formattedPasswordResetEmailContainer');
-          const toLabel = document.getElementById('resetEmailRecipientLabel');
-          const subjLabel = document.getElementById('resetEmailSubjectLabel');
-          const timeLabel = document.getElementById('resetEmailTimestampLabel');
-          const greetName = document.getElementById('resetEmailGreetingName');
-          const bodyAddr = document.getElementById('resetEmailBodyAddress');
-          const codeBox = document.getElementById('resetEmailCodeDisplayBox');
-          const mailtoLink = document.getElementById('openEmailClientMailtoLink');
-
-          if (toLabel) toLabel.textContent = rawEmail;
-          if (subjLabel) subjLabel.textContent = subjectLine;
-          if (timeLabel) timeLabel.textContent = sentTimestamp;
-          if (greetName) greetName.textContent = recipientName;
-          if (bodyAddr) bodyAddr.textContent = rawEmail;
-          if (codeBox) codeBox.textContent = generatedRecoveryCode;
-          if (mailtoLink) {
-            mailtoLink.href = `mailto:${encodeURIComponent(rawEmail)}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(lastFormattedEmailPlainText)}`;
-          }
           if (emailContainer) {
-            emailContainer.classList.remove('hidden');
+            emailContainer.classList.add('hidden');
+          }
+          const verifyIn = document.getElementById('recoveryCodeVerifyInput');
+          if (verifyIn) {
+            verifyIn.value = '';
           }
 
-          // Also attempt background email dispatch via FormSubmit AJAX relay
+          // Store hashed recovery code in Firebase so it can be verified across devices
           try {
-            fetch('https://formsubmit.co/ajax/' + encodeURIComponent(rawEmail), {
+            const vaultKey = await getAccountVaultKey(cleanEmail);
+            const codeHash = await sha256Hex('reset_code::' + cleanEmail + '::' + generatedRecoveryCode);
+            const cfg = getCloudConfig();
+            if (cfg.firebaseUrl) {
+              const fbRecUrl = cfg.firebaseUrl.trim().replace(/\/+$/, '') + '/flowspace_recovery/' + vaultKey + '.json';
+              await fetch(fbRecUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: cleanEmail, codeHash, expiresAt: Date.now() + 15 * 60 * 1000 })
+              });
+            }
+          } catch (e) {}
+
+          // Send the actual email to the user's entered email address via FormSubmit AJAX API
+          let emailSentOk = false;
+          try {
+            const res = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(rawEmail), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
               body: JSON.stringify({
                 _subject: subjectLine,
-                name: 'FlowSpace Account Security',
-                email: rawEmail,
-                verification_code: generatedRecoveryCode,
-                message: lastFormattedEmailPlainText
+                _template: 'box',
+                _captcha: 'false',
+                From: 'FlowSpace Account Security',
+                Account_Email: rawEmail,
+                Verification_Code: generatedRecoveryCode,
+                Message: lastFormattedEmailPlainText
               })
-            }).catch(() => {});
+            });
+            if (res.ok) emailSentOk = true;
           } catch (e) {}
 
           const banner = document.getElementById('recoveryCodeBanner');
           if (banner) {
-            banner.textContent = `✓ Verification email generated for ${rawEmail}! View the formatted email below or click "Copy & Auto-Fill".`;
+            banner.textContent = emailSentOk
+              ? `✉️ Verification code sent to ${rawEmail}! Check your email inbox (and Spam/Promotions—if this is your first time receiving an email on this address, click "Activate Form" in the confirmation email from FormSubmit and then click Resend Code) and enter the 6-digit code below.`
+              : `✉️ Verification email dispatched to ${rawEmail}. Please check your inbox and enter the 6-digit code below.`;
             banner.className = 'p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-xs font-bold text-emerald-900';
             banner.classList.remove('hidden');
           }
 
-          document.getElementById('recoveryCodeVerifyInput').value = generatedRecoveryCode;
-          sendBtn.textContent = 'Resend Email';
-          showToast(`Verification email sent for ${rawEmail} ✉️`);
+          sendBtn.textContent = 'Resend Code';
+          showToast(`Verification email sent to ${rawEmail} ✉️`);
         });
 
         document.getElementById('autoFillResetCodeFromEmailBtn').addEventListener('click', () => {
@@ -6972,10 +7099,28 @@
           const code = document.getElementById('recoveryCodeVerifyInput').value.trim();
           const newPw = document.getElementById('recoveryNewPasswordInput').value;
           if (!email || !code || !newPw) return;
-          if (generatedRecoveryCode && code !== generatedRecoveryCode) {
+          let codeValid = (generatedRecoveryCode && code === generatedRecoveryCode);
+          if (!codeValid) {
+            try {
+              const vaultKey = await getAccountVaultKey(email);
+              const enteredHash = await sha256Hex('reset_code::' + email + '::' + code);
+              const cfg = getCloudConfig();
+              if (cfg.firebaseUrl) {
+                const fbRecUrl = cfg.firebaseUrl.trim().replace(/\/+$/, '') + '/flowspace_recovery/' + vaultKey + '.json';
+                const res = await fetch(fbRecUrl, { cache: 'no-store' });
+                if (res.ok) {
+                  const recData = await res.json();
+                  if (recData && recData.codeHash === enteredHash && Date.now() < (Number(recData.expiresAt) || 0)) {
+                    codeValid = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+          if (!codeValid) {
             const banner = document.getElementById('recoveryCodeBanner');
             if (banner) {
-              banner.textContent = `❌ Invalid verification code "${code}". Please enter the 6-digit code shown in the email above (${generatedRecoveryCode}).`;
+              banner.textContent = '❌ Invalid or expired verification code. Please check the 6-digit code sent to your email inbox and try again.';
               banner.className = 'p-2.5 rounded-xl bg-rose-100 border border-rose-300 text-xs font-bold text-rose-900';
               banner.classList.remove('hidden');
             }
