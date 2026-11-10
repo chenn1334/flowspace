@@ -302,7 +302,7 @@ body.m .modal{width:100%;border-radius:26px 26px 0 0;max-height:92dvh;padding-bo
    ========================================================= */
 const DB_URL='https://flowspace-ac306-default-rtdb.firebaseio.com';
 const DB_ROOT=DB_URL+'/flowspace'; // legacy Firebase: only used for the one-time data import
-const SB_URL='https://YOUR-PROJECT-REF.supabase.co'; // <-- paste your Supabase Project URL here
+const SB_URL='https://xwqehccbngdqmjemjnam.supabase.co';
 const SB_KEY='sb_publishable_rA3t1DReUWGeZ_kYAgjlWA_O0LIiPSr';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){ui.recovery=true;ui.tab='account';render();}});
