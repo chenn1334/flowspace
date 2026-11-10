@@ -302,7 +302,7 @@ body.m .modal{width:100%;border-radius:26px 26px 0 0;max-height:92dvh;padding-bo
    ========================================================= */
 const DB_URL='https://flowspace-ac306-default-rtdb.firebaseio.com';
 const DB_ROOT=DB_URL+'/flowspace'; // legacy Firebase: only used for the one-time data import
-const SB_URL='https://xwqehccbngdqmjemjnam.supabase.co';
+const SB_URL='https://YOUR-PROJECT-REF.supabase.co'; // <-- paste your Supabase Project URL here
 const SB_KEY='sb_publishable_rA3t1DReUWGeZ_kYAgjlWA_O0LIiPSr';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){ui.recovery=true;ui.tab='account';render();}});
@@ -340,13 +340,13 @@ const DOW=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday
 const TZS=(()=>{try{return Intl.supportedValuesOf('timeZone');}catch(e){return['America/Los_Angeles','America/Denver','America/Chicago','America/New_York','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Tokyo','Asia/Shanghai','Asia/Kolkata','Australia/Sydney','UTC'];}})();
 
 /* ---------- data model ---------- */
-function blankData(){return{v:SCHEMA,settings:{ringtone:0,volume:.8,autoNext:true,prep:''},theme:null,customThemes:[],bodyParts:[],library:[],sessions:[],activeSession:null,weeks:{},diary:{},feelings:[],categories:[],prompts:[],updatedAt:0};}
+function blankData(){return{v:SCHEMA,settings:{ringtone:0,volume:.8,autoNext:true,prep:'',tick:3},theme:null,customThemes:[],bodyParts:[],library:[],sessions:[],activeSession:null,weeks:{},recurring:[],diary:{},feelings:[],categories:[],prompts:[],updatedAt:0};}
 const arr=x=>Array.isArray(x)?x:(x&&typeof x==='object'?Object.values(x):[]);
 function migrate(d){
   const b=blankData();d=d&&typeof d==='object'?d:{};
   const out=Object.assign(b,d);
   out.settings=Object.assign(blankData().settings,d.settings||{});
-  ['customThemes','bodyParts','library','sessions','feelings','categories','prompts'].forEach(k=>out[k]=arr(out[k]));
+  ['customThemes','bodyParts','library','sessions','feelings','categories','prompts','recurring'].forEach(k=>out[k]=arr(out[k]));
   out.sessions.forEach(s=>{s.stretches=arr(s.stretches);if(!s.id)s.id=uid();if(s.name==null)s.name='Session';});
   const fixS=x=>{if(!x.id)x.id=uid();x.bilateral=!!x.bilateral;x.startSide=x.startSide||'L';x.img=x.img||'';x.desc=x.desc||'';x.duration=+x.duration||30;x.bodyPart=x.bodyPart||'';};
   out.library.forEach(fixS);out.sessions.forEach(s=>s.stretches.forEach(fixS));
@@ -354,7 +354,10 @@ function migrate(d){
   if(!out.weeks||typeof out.weeks!=='object')out.weeks={};
   Object.values(out.weeks).forEach(w=>{['goals','meals','grocery'].forEach(k=>w[k]=arr(w[k]));w.meals.forEach(m=>{m.ingredients=arr(m.ingredients);m.steps=arr(m.steps);});w.days=w.days||{};for(let i=0;i<7;i++){w.days[i]=w.days[i]||{focus:'',tasks:[]};w.days[i].tasks=arr(w.days[i].tasks);}});
   if(!out.diary||typeof out.diary!=='object')out.diary={};
-  Object.values(out.diary).forEach(e=>{e.feelings=arr(e.feelings);e.cats=arr(e.cats);e.qa=arr(e.qa);});
+  Object.values(out.diary).forEach(e=>{e.feelings=arr(e.feelings);e.cats=arr(e.cats);e.qa=arr(e.qa);e.wins=arr(e.wins);
+    if((e.proud||'').trim()){const old=e.proud.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(t=>({id:uid(),t}));e.wins=[...old,...e.wins];}
+    e.proud='';
+    if(e.won&&!e.wins.length)e.wins.push({id:uid(),t:'Counted today as a win'});e.won=false;});
   if(out.activeSession&&!out.sessions.find(s=>s.id===out.activeSession))out.activeSession=null;
   if(!out.activeSession&&out.sessions[0])out.activeSession=out.sessions[0].id;
   out.v=SCHEMA;return out;
@@ -364,11 +367,19 @@ let acct=null; // {key,name,email,tz,remember}
 const ui={tab:'stretch',sub:{stretch:'timer',planner:'goals',diary:'entry'},page:null,tz:DEFAULT_TZ,authTab:'login',week:null,diaryDate:null,
   force:null,open:{},draft:null,draftGoal:null,draftMeal:null,editing:null,img:{},showPw:{},emoji:{},search:{},cal:null,histMonth:null,mealOpen:null,msg:null};
 
+const isRec=g=>!!(g&&g.rid&&D.recurring.some(r=>r.id===g.rid));
+function applyRecurring(mon,w){
+  (D.recurring||[]).forEach(r=>{
+    if(mon<r.from||(w.skip||[]).includes(r.id)||w.goals.some(g=>g.rid===r.id))return;
+    w.goals.push({id:uid(),rid:r.id,title:r.title,objective:r.objective||'',category:r.category||'',msTarget:r.msTarget||0,freqTarget:r.freqTarget||0,ms:0,freq:0});
+  });
+}
 function getWeek(mon){let w=D.weeks[mon];if(!w){w=D.weeks[mon]={objective:'',goals:[],meals:[],grocery:[],days:{}};}
+  applyRecurring(mon,w);
   for(let i=0;i<7;i++){if(!w.days[i])w.days[i]={focus:'',tasks:[]};}return w;}
 function peekWeek(mon){return D.weeks[mon]||null;}
-function getEntry(date){if(!D.diary[date])D.diary[date]={feelings:[],proud:'',cats:[],qa:[],won:false};return D.diary[date];}
-function hasEntry(date){const e=D.diary[date];return !!(e&&(e.feelings.length||(e.proud||'').trim()||e.cats.length||e.qa.some(q=>(q.a||'').trim())||e.won));}
+function getEntry(date){if(!D.diary[date])D.diary[date]={feelings:[],proud:'',cats:[],qa:[],wins:[]};return D.diary[date];}
+function hasEntry(date){const e=D.diary[date];return !!(e&&(e.feelings.length||(e.proud||'').trim()||e.cats.length||e.qa.some(q=>(q.a||'').trim())||(e.wins&&e.wins.length)));}
 function session(){return D.sessions.find(s=>s.id===D.activeSession)||null;}
 
 /* ---------- persistence: IndexedDB with localStorage fallback ---------- */
@@ -518,6 +529,15 @@ function synthRing(i){
   w(0,'RIFF');v.setUint32(4,36+pcm.byteLength,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,pcm.byteLength,true);
   return ringCache[i]=URL.createObjectURL(new Blob([head,pcm.buffer],{type:'audio/wav'}));
 }
+const tickCache={};
+function synthTick(final){
+  const k=final?1:0;if(tickCache[k])return tickCache[k];
+  const sr=22050,len=Math.ceil(sr*(final?.16:.09)),f=final?1320:880,pcm=new Int16Array(len);
+  for(let i=0;i<len;i++){const t=i/sr;pcm[i]=clamp(Math.sin(2*Math.PI*f*t)*Math.min(1,t*400)*Math.exp(-t*(final?18:35))*.7,-1,1)*32767;}
+  const head=new ArrayBuffer(44),v=new DataView(head);const w=(o,x)=>[...x].forEach((c,j)=>v.setUint8(o+j,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+pcm.byteLength,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,pcm.byteLength,true);
+  return tickCache[k]=URL.createObjectURL(new Blob([head,pcm.buffer],{type:'audio/wav'}));
+}
 const player=new Audio();player.setAttribute('playsinline','');player.preload='auto';
 let audioUnlocked=false;
 let silentURL=null;
@@ -526,6 +546,8 @@ function silentWav(){if(silentURL)return silentURL;const n=2205,h=new ArrayBuffe
   return silentURL=URL.createObjectURL(new Blob([h],{type:'audio/wav'}));}
 function unlockAudio(){if(audioUnlocked)return;audioUnlocked=true;try{player.src=silentWav();const p=player.play();if(p)p.then(()=>{player.pause();}).catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
 function playRing(i){i=i??D.settings.ringtone??0;try{player.pause();player.src=synthRing(i);player.volume=clamp(+D.settings.volume,0,1);player.currentTime=0;const p=player.play();if(p)p.catch(()=>{});}catch(e){}}
+
+function playTick(final){try{player.pause();player.src=synthTick(!!final);player.volume=clamp(+D.settings.volume,0,1);player.currentTime=0;const p=player.play();if(p)p.catch(()=>{});}catch(e){}}
 
 /* ---------- confetti ---------- */
 const cv=$('#confetti'),cx=cv.getContext('2d');let parts=[],confRAF=0;
@@ -649,6 +671,15 @@ function tStart(){unlockAudio();const st=curSt();if(!st)return;
   if(T.phase==='idle'){tSegment();}
   else if(T.phase==='wait'){tGo(T.idx+1,true);return;}
   T.running=true;T.last=performance.now();paintTimer();}
+const tickSecs=()=>clamp(Math.round(+D.settings.tick||0),0,60);
+function tickCheck(){
+  const n=tickSecs();
+  if(!n||T.phase!=='run'||T.total<=n)return;
+  const sec=Math.ceil(T.remain),key=T.idx+':'+T.side+':'+T.total;
+  if(T.tk!==key){T.tk=key;T.tl=n+1;}
+  if(sec>n)T.tl=n+1;
+  if(sec>=1&&sec<=n&&sec<T.tl){T.tl=sec;playTick(sec===1);}
+}
 function tPause(){T.running=false;paintTimer();}
 function tGo(i,run){const s=session();if(!s||!s.stretches.length)return;i=clamp(i,0,s.stretches.length-1);T.idx=i;T.side=0;
   if(run||T.running){tSegment();T.running=true;T.last=performance.now();}else{T.phase='idle';T.remain=T.total=dur(curSt());}paintTimer();}
@@ -667,7 +698,7 @@ function tDone(){
 function tAdjust(sec){if(!curSt())return;if(T.phase==='idle'){T.phase='run';T.remain=T.total=dur(curSt());}
   if(T.phase==='done'||T.phase==='wait')return;
   T.remain=Math.max(0,T.remain+sec);if(T.remain>T.total)T.total=T.remain;if(T.remain<=0)tDone();paintTimer();}
-setInterval(()=>{if(!T.running)return;const now=performance.now();T.remain-=(now-T.last)/1000;T.last=now;if(T.remain<=0)tDone();paintTimer();},200);
+setInterval(()=>{if(!T.running)return;const now=performance.now();T.remain-=(now-T.last)/1000;T.last=now;tickCheck();if(T.remain<=0)tDone();paintTimer();},200);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&T.running){T.last=performance.now();}});
 
 function phaseLabel(){const st=curSt();const sd=sides(st)[T.side];
@@ -719,7 +750,9 @@ function vTimer(){
       <label class="f" for="vol">Volume <span class="muted" id="volv">${Math.round(R.volume*100)}%</span></label><input type="range" id="vol" min="0" max="1" step=".05" value="${R.volume}" data-in="vol">
       <p class="small muted mt">Plays through your phone’s media channel, so you’ll hear it even with the silent switch on. Media volume still applies.</p></div>
     <div><label class="f">When the timer reaches zero</label><div class="seg"><button class="${R.autoNext?'on':''}" data-a="autoNext" data-v="1">Auto jump to next stretch</button><button class="${!R.autoNext?'on':''}" data-a="autoNext" data-v="0">Manually move to next</button></div>
-      <label class="f" for="prep">Prep time before each stretch (0–600 seconds)</label><input class="in" type="number" min="0" max="600" id="prep" data-in="prep" value="${R.prep===''?'':R.prep}" placeholder="Seconds"></div>
+      <label class="f" for="prep">Prep time before each stretch (0–600 seconds)</label><input class="in" type="number" min="0" max="600" id="prep" data-in="prep" value="${R.prep===''?'':R.prep}" placeholder="Seconds">
+      <label class="f" for="tick">Countdown ticks before each stretch ends (seconds, 0 = off)</label><div class="row"><input class="in" type="number" min="0" max="60" id="tick" data-in="tick" value="${R.tick===''?'':R.tick}" placeholder="3" style="flex:1"><button class="btn" data-a="hearTick">▶ Hear tick</button></div>
+      <p class="small muted mt">A soft tick each second for the last N seconds, with a higher one on the final second.</p></div>
   </div>`:''}</div>`;
 }
 function stRow(st,i,timer){
@@ -838,10 +871,11 @@ function vGoals(){
   <div class="row mt2 between"><h3>Weekly goals</h3><button class="btn pri" data-a="goalNew">+ Create Weekly Goal</button></div>
   <div class="grid2 mt">${w.goals.length?w.goals.map(g=>{const done=goalDone(g);const mt=+g.msTarget||0,ft=+g.freqTarget||0;
     return`<div class="card goal hx ${done?'complete':''}" style="position:relative">${xBtn('goalDel',`data-id="${g.id}" style="position:absolute;top:10px;right:10px"`)}
-    <div class="row">${g.category?`<span class="tag">${esc(g.category)}</span>`:''}${done?'<span class="won">✓ Goal reached</span>':''}</div>
+    <div class="row">${g.category?`<span class="tag">${esc(g.category)}</span>`:''}${isRec(g)?'<span class="tag acc">🔁 Every week</span>':''}${done?'<span class="won">✓ Goal reached</span>':''}</div>
     <h3 class="mt" style="word-break:break-word;padding-right:1.4rem">${esc(g.title)}</h3>${g.objective?`<p class="small muted mt" style="white-space:pre-wrap">${esc(g.objective)}</p>`:''}
     ${mt?`<div class="mt"><div class="row between"><span class="small"><b>Milestones</b></span><div class="stepper"><button data-a="goalStep" data-id="${g.id}" data-k="ms" data-d="-1" aria-label="Fewer">−</button><span class="val">${g.ms} / ${mt}</span><button data-a="goalStep" data-id="${g.id}" data-k="ms" data-d="1" aria-label="More">+</button></div></div><div class="prog mt"><i style="width:${clamp(g.ms/mt*100,0,100)}%"></i></div></div>`:''}
     ${ft?`<div class="mt"><div class="row between"><span class="small"><b>Times this week</b></span><div class="stepper"><button data-a="goalStep" data-id="${g.id}" data-k="freq" data-d="-1" aria-label="Fewer">−</button><span class="val">${g.freq} / ${ft}</span><button data-a="goalStep" data-id="${g.id}" data-k="freq" data-d="1" aria-label="More">+</button></div></div><div class="prog mt"><i style="width:${clamp(g.freq/ft*100,0,100)}%"></i></div></div>`:''}
+    <div class="row mt"><button class="btn sm ghost" data-a="goalRepeat" data-id="${g.id}">${isRec(g)?'Stop repeating':'🔁 Repeat every week'}</button></div>
     </div>`;}).join(''):`<div style="grid-column:1/-1">${empty('🎯','No goals for this week yet','Set one thing you want to move forward, and track it step by step.')}</div>`}</div>`;
 }
 function vGoalNew(){
@@ -852,6 +886,7 @@ function vGoalNew(){
   <label class="f" for="g-obj">Objective for the whole week</label><textarea class="in" id="g-obj" data-keep data-grow placeholder="Why it matters and what done looks like"></textarea>
   <label class="f" for="g-cat">Category</label><input class="in" id="g-cat" data-keep list="g-cats" placeholder="Health, Work, Learning…"><datalist id="g-cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
   <div class="grid2">${stepper('g-ms','Milestones to reach')}${stepper('g-fq','Target times this week')}</div>
+  <label class="check mt"><input type="checkbox" id="g-rep" data-keep> 🔁 Repeat this goal every week (progress resets each week)</label>
   <div class="row mt2"><button class="btn pri lg" data-a="goalSave">Create Goal</button><button class="btn ghost" data-a="back">Cancel</button></div></div>`;
 }
 function vMeals(){
@@ -919,19 +954,20 @@ function vDiary(){
   return`<div class="head">${hd}<div class="subtabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" class="${ui.sub.diary===k?'on':''}" data-a="sub" data-s="${k}">${l}</button>`).join('')}</div></div>`+(ui.sub.diary==='entry'?vEntry():vHistory());
 }
 function vEntry(){
-  const e=D.diary[ui.diaryDate]||{feelings:[],proud:'',cats:[],qa:[],won:false};
+  const e=D.diary[ui.diaryDate]||{feelings:[],proud:'',cats:[],qa:[],wins:[]};if(!e.wins)e.wins=[];
   const fq=ui.search.fe||'';const feels=D.feelings.filter(f=>!ui.open.fe||similar(fq,f.name+' '+(EMOJI.find(x=>x.e===f.emoji)?.k||'')));
   const used=new Set(e.qa.map(q=>q.pid));
   return`<div class="card"><h3>Daily emotions & feelings</h3>
     <div class="chips mt">${feels.map(f=>`<button class="chip hx ${e.feelings.includes(f.id)?'on':''}" data-a="feelToggle" data-id="${f.id}" aria-pressed="${e.feelings.includes(f.id)}">${f.emoji?f.emoji+' ':''}${esc(f.name)}${xBtn('feelDel',`data-id="${f.id}"`).replace('<button','<span role="button" tabindex="0"').replace('</button>','</span>')}</button>`).join('')}
     <button class="chip add" data-a="toggle" data-k="fe">${ui.open.fe?'Close':'😊 + Add Feeling'}</button></div>
     ${ui.open.fe?`<div class="panel">${emojiPanel('fe')}</div>`:''}</div>
-  <div class="card"><div class="row between"><h3>What I am proud of today</h3>${e.won?'<span class="won">🏆 Win celebrated</span>':''}</div>
-    <textarea class="in proud-box mt" id="proud" data-grow data-in="proud" placeholder="Big or small, write it down.">${esc(e.proud)}</textarea>
+  <div class="card"><div class="row between"><h3>What I am proud of today</h3>${e.wins.length?`<span class="won">🏆 ${e.wins.length}</span>`:''}</div>
+    <div class="mt">${e.wins.length?e.wins.map(w=>`<div class="li hx"><span class="lt">${esc(w.t)}</span>${xBtn('winDel',`data-id="${w.id}"`)}</div>`).join(''):'<p class="small muted">Nothing yet. Add anything you’re proud of, big or small.</p>'}</div>
+    <div class="addline"><input class="in" id="win-new" data-keep placeholder="Add something you’re proud of" data-enter="winAdd"><button class="btn acc" data-a="winAdd">+ Add</button></div>
     <div class="chips mt">${D.categories.map(c=>`<button class="chip acc hx ${e.cats.includes(c.id)?'on':''}" data-a="catToggle" data-id="${c.id}" aria-pressed="${e.cats.includes(c.id)}">${c.emoji?c.emoji+' ':''}${esc(c.name)}${xBtn('catDel',`data-id="${c.id}"`).replace('<button','<span role="button" tabindex="0"').replace('</button>','</span>')}</button>`).join('')}
     <button class="chip add" data-a="toggle" data-k="ca">${ui.open.ca?'Close':'🏷️ + Add Category'}</button></div>
     ${ui.open.ca?`<div class="panel">${emojiPanel('ca')}</div>`:''}
-    <div class="row mt2"><button class="btn acc" data-a="celebrate">🏆 Celebrate today’s win</button></div></div>
+</div>
   <div class="card"><h3>Reflection</h3><p class="small muted">Pick the questions you want today. Only those appear below.</p>
     <div class="chips mt">${D.prompts.map(p=>`<button class="chip hx ${used.has(p.id)?'on':''}" data-a="promptPick" data-id="${p.id}">${used.has(p.id)?'✓ ':'+ '}${esc(p.q)}${xBtn('promptDel',`data-id="${p.id}"`).replace('<button','<span role="button" tabindex="0"').replace('</button>','</span>')}</button>`).join('')}</div>
     <div class="addline"><input class="in" id="rq-new" data-keep placeholder="Write your own question" data-enter="promptAdd"><button class="btn pri" data-a="promptAdd">Add question</button></div>
@@ -943,7 +979,7 @@ function vHistory(){
   return`<div class="grid2"><div class="card cal">${calTop(mo,'histMove')}${calGrid(mo,{sel:ui.diaryDate,marks:hasEntry})}<div class="row mt"><button class="btn sm acc" data-a="histToday">Jump to Today</button></div></div>
   <div class="card"><h3>${nice(mo+'-01',{month:'long',year:'numeric'})}</h3>
   <div class="mt">${ents.length?ents.map(k=>{const e=D.diary[k];const em=e.feelings.map(id=>D.feelings.find(f=>f.id===id)).filter(Boolean).map(f=>f.emoji||f.name).join(' ');
-    return`<div class="meal" data-a="histOpen" data-d="${k}" role="button" tabindex="0"><span class="mi">${e.won?'🏆':'📓'}</span><span style="flex:1;min-width:0"><b>${nice(k,{weekday:'short',month:'short',day:'numeric'})}</b> <span>${esc(em)}</span><br><span class="small muted">${esc((e.proud||'').slice(0,90))||(e.qa.length?e.qa.length+' reflections':'Feelings logged')}</span></span>›</div>`;}).join(''):empty('🗓️','No entries this month','Pick any day on the calendar to write or look back.')}</div></div></div>`;
+    return`<div class="meal" data-a="histOpen" data-d="${k}" role="button" tabindex="0"><span class="mi">${(e.wins&&e.wins.length)?'🏆':'📓'}</span><span style="flex:1;min-width:0"><b>${nice(k,{weekday:'short',month:'short',day:'numeric'})}</b> <span>${esc(em)}</span><br><span class="small muted">${(e.wins&&e.wins.length)?esc(e.wins[0].t.slice(0,70))+(e.wins.length>1?' +'+(e.wins.length-1)+' more':''):(e.qa.length?e.qa.length+' reflections':'Feelings logged')}</span></span>›</div>`;}).join(''):empty('🗓️','No entries this month','Pick any day on the calendar to write or look back.')}</div></div></div>`;
 }
 
 /* =================== ACCOUNT =================== */
@@ -1045,6 +1081,7 @@ const A={
   tStart(){tStart();}, tPause(){tPause();}, tPrev(){tGo(T.idx-1);}, tNext(){tGo(T.idx+1);},
   tReset(){tReset();paintTimer(true);}, tJump(el){tGo(+el.dataset.i);},
   tAdj(el){tAdjust(+el.dataset.n);}, tSkipN(){const n=+val('skipN');if(n>0)tAdjust(-n);else toast('Enter the seconds to skip.');},
+  hearTick(){unlockAudio();playTick(false);},
   hear(){unlockAudio();playRing(+D.settings.ringtone);},
   autoNext(el){D.settings.autoNext=el.dataset.v==='1';commit();render();},
 
@@ -1087,11 +1124,18 @@ const A={
   goalNew(){ui.page='goalNew';clearVals('g-');render();top0();},
   numStep(el){const i=document.getElementById(el.dataset.t);i.value=clamp((+i.value||0)+ +el.dataset.d,0,99);ui.vals[i.id]=i.value;},
   goalSave(){const t=val('g-title').trim();if(!t){toast('Give the goal a title.');$('#g-title')?.focus();return;}
-    getWeek(ui.week).goals.push({id:uid(),title:t,objective:val('g-obj').trim(),category:val('g-cat').trim(),msTarget:clamp(+val('g-ms')||0,0,99),freqTarget:clamp(+val('g-fq')||0,0,99),ms:0,freq:0});
-    clearVals('g-');ui.page=null;commit();render();toast('Goal created');},
+    const g={id:uid(),title:t,objective:val('g-obj').trim(),category:val('g-cat').trim(),msTarget:clamp(+val('g-ms')||0,0,99),freqTarget:clamp(+val('g-fq')||0,0,99),ms:0,freq:0};
+    if($('#g-rep')?.checked){const r={id:uid(),title:g.title,objective:g.objective,category:g.category,msTarget:g.msTarget,freqTarget:g.freqTarget,from:ui.week};D.recurring.push(r);g.rid=r.id;}
+    getWeek(ui.week).goals.push(g);
+    clearVals('g-');ui.page=null;commit();render();toast(g.rid?'Goal created. It will appear every week.':'Goal created');},
+  goalRepeat(el){const w=getWeek(ui.week);const g=w.goals.find(x=>x.id===el.dataset.id);if(!g)return;
+    if(isRec(g)){const rid=g.rid;D.recurring=D.recurring.filter(r=>r.id!==rid);delete g.rid;
+      Object.keys(D.weeks).forEach(k=>{if(k>ui.week){const x=D.weeks[k];x.goals=x.goals.filter(y=>!(y.rid===rid&&!y.ms&&!y.freq));}});toast('Stopped repeating. This week’s copy stays; future weeks won’t get it.');}
+    else{const r={id:uid(),title:g.title,objective:g.objective||'',category:g.category||'',msTarget:g.msTarget||0,freqTarget:g.freqTarget||0,from:ui.week};D.recurring.push(r);g.rid=r.id;toast('This goal will now appear every week.');}
+    commit();render();},
   goalStep(el){const g=getWeek(ui.week).goals.find(x=>x.id===el.dataset.id);const k=el.dataset.k;const was=goalDone(g);
     g[k]=clamp((g[k]||0)+ +el.dataset.d,0,+(k==='ms'?g.msTarget:g.freqTarget)||0);if(!was&&goalDone(g)){confetti(150,['🎯','🏆','✨'],true);toast('Goal reached!');}commit();render();},
-  goalDel(el){const w=getWeek(ui.week);w.goals=w.goals.filter(g=>g.id!==el.dataset.id);commit();render();},
+  goalDel(el){const w=getWeek(ui.week);const g=w.goals.find(x=>x.id===el.dataset.id);if(isRec(g)){w.skip=[...(w.skip||[]),g.rid];toast('Removed from this week only. Use “Stop repeating” to end it for good.');}w.goals=w.goals.filter(x=>x.id!==el.dataset.id);commit();render();},
   mealNew(){ui.page='mealNew';ui.draftMeal={ing:[],steps:[]};clearVals('m-');ui.form.meal={type:''};render();top0();},
   mealType(el){ui.form.meal.type=ui.form.meal.type===el.dataset.v?'':el.dataset.v;render();},
   dIngAdd(){const v=val('mi-new').trim();if(!v)return;ui.draftMeal.ing.push(v);$('#mi-new').value='';render();$('#mi-new')?.focus();},
@@ -1131,7 +1175,8 @@ const A={
   emojiPick(el){const k=el.dataset.k;ui.emoji[k]=ui.emoji[k]===el.dataset.v?'':el.dataset.v;render();},
   feAdd(){addTagged('fe',D.feelings,'feelings');},
   caAdd(){addTagged('ca',D.categories,'cats');},
-  celebrate(){const e=entry();e.won=true;commit();render();confetti(170,['🏆','🌟','💪','✨']);toast('Proud of you. That counts.');},
+  winAdd(){const v=val('win-new').trim();if(!v)return;entry().wins.push({id:uid(),t:v});clearVals('win-');commit();render();$('#win-new')?.focus();},
+  winDel(el){const e=entry();e.wins=e.wins.filter(w=>w.id!==el.dataset.id);commit();render();},
   promptPick(el){const e=entry(),p=D.prompts.find(x=>x.id===el.dataset.id);const ex=e.qa.find(q=>q.pid===p.id);
     if(ex){if((ex.a||'').trim()&&!confirm('Remove this question and its answer from today?'))return;e.qa=e.qa.filter(q=>q!==ex);}
     else e.qa.push({id:uid(),pid:p.id,q:p.q,a:''});commit();render();},
@@ -1166,12 +1211,12 @@ function addTagged(k,list,field){
 /* input / change handlers */
 const IN={
   vol(el){D.settings.volume=+el.value;const v=$('#volv');if(v)v.textContent=Math.round(el.value*100)+'%';commit();},
+  tick(el){D.settings.tick=el.value===''?'':clamp(Math.round(+el.value),0,60);commit();},
   prep(el){D.settings.prep=el.value===''?'':clamp(+el.value,0,600);commit();},
   draftName(el){ui.draft.name=el.value;$$('[data-a=libAdd][data-t=draft]:not([disabled])').forEach(b=>b.textContent='+ Add to '+(el.value.trim()||'New Session'));},
   search(el){ui.search[el.dataset.k]=el.value;render();const n=document.getElementById(el.id);if(n&&n.dataset.ac)showAc(n);},
   wkObj(el){getWeek(ui.week).objective=el.value;grow(el);commit();},
   dayFocus(el){getWeek(ui.week).days[el.dataset.i].focus=el.value;commit();},
-  proud(el){entry().proud=el.value;grow(el);commit();},
   qaAns(el){const q=entry().qa.find(x=>x.id===el.dataset.id);if(q)q.a=el.value;grow(el);commit();},
   themeColor(){D.theme={p:val('tc-p'),a:val('tc-a'),b:val('tc-b'),preset:null};applyTheme();commit();$$('.sw.on').forEach(s=>s.classList.remove('on'));},
 };
@@ -1253,6 +1298,9 @@ document.addEventListener('click',e=>{
   if(t.type==='checkbox')e.preventDefault();
   snapshot();A[t.dataset.a](t,e);
 },true);
+const keepSync=e=>{const el=e.target;if(el&&el.matches&&el.matches('[data-keep]')&&el.id)ui.vals[el.id]=el.type==='checkbox'?el.checked:el.value;};
+document.addEventListener('input',keepSync);
+document.addEventListener('change',e=>{const el=e.target;if(el&&(el.tagName==='SELECT'||el.type==='checkbox'))keepSync(e);});
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.ac&&!el.dataset.in)showAc(el);if(el.dataset.in&&IN[el.dataset.in]){if(el.dataset.in==='search')snapshot();IN[el.dataset.in](el,e);}});
 document.addEventListener('focusin',e=>{const el=e.target;if(el.dataset&&el.dataset.ac&&el.value)showAc(el);});
 document.addEventListener('change',async e=>{const el=e.target;
