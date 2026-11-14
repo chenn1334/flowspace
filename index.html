@@ -302,7 +302,12 @@ body.m .modal{width:100%;border-radius:26px 26px 0 0;max-height:92dvh;padding-bo
    ========================================================= */
 const DB_URL='https://flowspace-ac306-default-rtdb.firebaseio.com';
 const DB_ROOT=DB_URL+'/flowspace'; // legacy Firebase: only used for the one-time data import
-const SB_URL='https://YOUR-PROJECT-REF.supabase.co'; // <-- paste your Supabase Project URL here
+const SB_URL_DEFAULT='https://YOUR-PROJECT-REF.supabase.co'; // optional: paste your Project URL here, or enter it in the app (Account tab)
+const SB_PLACEHOLDER=/YOUR-PROJECT-REF/;
+let SB_STORED='';try{SB_STORED=localStorage.getItem('fs_sburl')||'';}catch(e){}
+const SB_URL=!SB_PLACEHOLDER.test(SB_URL_DEFAULT)?SB_URL_DEFAULT:(SB_STORED||SB_URL_DEFAULT);
+const SB_READY=!SB_PLACEHOLDER.test(SB_URL);
+const SB_HOST=SB_URL.replace(/^https?:\/\//,'');
 const SB_KEY='sb_publishable_rA3t1DReUWGeZ_kYAgjlWA_O0LIiPSr';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){ui.recovery=true;ui.tab='account';render();}});
@@ -773,7 +778,7 @@ function sForm(fid,o={}){
   <div class="grid2"><div><label class="f" for="${fid}-dur">Duration (seconds)</label><input class="in" type="number" min="1" max="3600" id="${fid}-dur" data-keep placeholder="Seconds"></div>
   <div><label class="f" for="${fid}-bp">Target body area</label><div class="row"><select class="in" id="${fid}-bp" data-keep style="flex:1 1 140px"><option value="">None</option>${D.bodyParts.map(b=>`<option>${esc(b)}</option>`).join('')}</select><button class="btn sm" data-a="toggle" data-k="bp-${fid}">+ Body Part</button></div>
     ${ui.open['bp-'+fid]?`<div class="addline"><input class="in" id="${fid}-bpnew" placeholder="New body part" data-enter="bpAdd" data-f="${fid}"><button class="btn sm pri" data-a="bpAdd" data-f="${fid}">Add</button></div>`:''}
-    ${D.bodyParts.length?`<div class="chips mt">${D.bodyParts.map(b=>`<span class="chip hx">${esc(b)}${xBtn('bpDel',`data-v="${esc(b)}"`)}</span>`).join('')}</div>`:''}</div></div>
+    ${D.bodyParts.length?`<div class="chips mt">${D.bodyParts.map(b=>`<button type="button" class="chip acc hx ${ui.vals[fid+'-bp']===b?'on':''}" data-a="bpPick" data-f="${fid}" data-v="${esc(b)}" aria-pressed="${ui.vals[fid+'-bp']===b}">${esc(b)}${xBtn('bpDel',`data-v="${esc(b)}"`).replace('<button','<span role="button" tabindex="0"').replace('</button>','</span>')}</button>`).join('')}</div>`:''}</div></div>
   <label class="f">Sides</label><div class="seg"><button class="${!f.bil?'on':''}" data-a="fset" data-f="${fid}" data-k="bil" data-v="0">Single (1×)</button><button class="${f.bil?'on':''}" data-a="fset" data-f="${fid}" data-k="bil" data-v="1">Bilateral (2× · Left & Right)</button></div>
   ${f.bil?`<label class="f">Start with</label><div class="seg"><button class="${f.side==='L'?'on':''}" data-a="fset" data-f="${fid}" data-k="side" data-v="L">Left → Right</button><button class="${f.side==='R'?'on':''}" data-a="fset" data-f="${fid}" data-k="side" data-v="R">Right → Left</button></div>`:''}
   <label class="f">Picture</label><div class="imgpick">${img?`<img class="prev" src="${esc(img)}" alt="Stretch picture" onerror="this.style.opacity=.3">`:''}
@@ -991,7 +996,8 @@ function vAccount(){
     ${pwField('r-new','New password','new-password')}${pwField('r-new2','Confirm new password','new-password')}
     ${msg}<button class="btn pri lg mt2" data-a="setNewPw">Save new password</button></div></div>`;
   if(!acct){const t=ui.authTab;
-    return`<div class="auth"><div class="card"><h2>${t==='login'?'Welcome back':t==='signup'?'Create your account':'Reset your password'}</h2>
+    const setup=!SB_READY?`<div class="card" style="margin-bottom:12px"><h3>Connect to Supabase</h3><p class="small muted mt">Paste your Project URL once (Supabase → Connect, or Settings → API). It looks like https://abcdefgh.supabase.co</p><div class="addline"><input class="in" id="sb-url" data-keep placeholder="https://abcdefgh.supabase.co" data-enter="sbSave" inputmode="url" autocapitalize="off" autocomplete="off"><button class="btn pri" data-a="sbSave">Save</button></div></div>`:'';
+    return`<div class="auth">${setup}<div class="card"><h2>${t==='login'?'Welcome back':t==='signup'?'Create your account':'Reset your password'}</h2>
     <p class="muted small mt">${t==='forgot'?'We’ll email you a link to choose a new password.':'Your stretches, plans and diary follow you to every device.'}</p>
     <div class="subtabs mt" style="display:flex">${[['login','Login'],['signup','Sign Up'],['forgot','Forgot Password']].map(([k,l])=>`<button class="${t===k?'on':''}" style="flex:1" data-a="authTab" data-t="${k}">${l}</button>`).join('')}</div>
     ${t==='signup'?`<label class="f" for="a-name">Name</label><input class="in" id="a-name" data-keep autocomplete="name">`:''}
@@ -999,7 +1005,8 @@ function vAccount(){
     ${t==='forgot'?'':pwField('a-pw','Password',t==='signup'?'new-password':'current-password')}
     ${t==='signup'?`<label class="f" for="a-tz">Time zone</label>${tzSelect('a-tz',ui.tz,'data-keep')}`:''}
     ${t!=='forgot'?`<label class="check mt"><input type="checkbox" id="a-rem" data-keep checked> Remember me</label>`:''}
-    ${msg}<button class="btn pri lg mt2" style="width:100%;justify-content:center" data-a="auth" ${ui.busy?'disabled':''}>${ui.busy?'One moment…':t==='login'?'Log In':t==='signup'?'Sign Up':'Email me a reset link'}</button></div></div>`;}
+    ${msg}<button class="btn pri lg mt2" style="width:100%;justify-content:center" data-a="auth" ${ui.busy?'disabled':''}>${ui.busy?'One moment…':t==='login'?'Log In':t==='signup'?'Sign Up':'Email me a reset link'}</button>
+    ${SB_READY?`<p class="small muted mt">Cloud: ${esc(SB_HOST)}${SB_STORED&&SB_URL===SB_STORED?' · <button class="btn sm ghost" data-a="sbChange">Change</button>':''}</p>`:''}</div></div>`;}
   return`<div class="head"><h2>Your account</h2></div><div class="grid2">
   <div class="card"><div class="row"><div class="brand-mark" style="width:56px;height:56px;font-size:1.4rem;animation:none"><span style="animation:none">${esc((acct.name||'?').trim()[0]||'?').toUpperCase()}</span></div><div><h3>${esc(acct.name)}</h3><p class="small muted">${esc(acct.email)}</p></div></div>
     <label class="f" for="p-name">Display name</label><div class="addline" style="margin-top:0"><input class="in" id="p-name" value="${esc(acct.name)}" data-enter="nameSave"><button class="btn" data-a="nameSave">Save</button></div>
@@ -1038,12 +1045,19 @@ function resetUi(){Object.assign(ui,{sub:{stretch:'timer',planner:'goals',diary:
   ui.week=mondayOf(todayStr());ui.diaryDate=todayStr();T.sid=null;tReset();}
 
 const A={
+  sbSave(){let v=val('sb-url').trim();if(!v)return toast('Paste your Project URL first.');if(!/^https?:\/\//i.test(v))v='https://'+v;
+    try{v=new URL(v).origin;}catch(e){return toast('That doesn’t look like a URL. Example: https://abcdefgh.supabase.co');}
+    if(SB_PLACEHOLDER.test(v)||v.indexOf('.')<0)return toast('Paste your real Project URL.');
+    try{localStorage.setItem('fs_sburl',v);}catch(e){return toast('Your browser blocked saving. Paste the URL into the file instead.');}
+    location.reload();},
+  sbChange(){try{localStorage.removeItem('fs_sburl');}catch(e){}location.reload();},
+  bpPick(el){const f=el.dataset.f,sel=document.getElementById(f+'-bp');if(!sel)return;const nv=sel.value===el.dataset.v?'':el.dataset.v;sel.value=nv;ui.vals[f+'-bp']=nv;syncBp(f);},
   async setNewPw(){
     const n1=val('r-new'),n2=val('r-new2');
     if(n1.length<6)return fail('Passwords need at least 6 characters.');
     if(n1!==n2)return fail('The two passwords don’t match.');
     const{error}=await sb.auth.updateUser({password:n1});
-    if(error)return fail(error.message);
+    if(error)return fail(authMsg(error.message));
     await sb.auth.signOut();ui.recovery=false;ui.authTab='login';
     ui.msg={ok:true,text:'Password updated. Log in with it.'};render();
   },
@@ -1243,7 +1257,16 @@ function showAc(el){
 /* =================== AUTH =================== */
 const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 function fail(t){ui.msg={text:t};ui.busy=false;render();}
+function authMsg(m){
+  m=String(m||'');
+  if(!SB_READY)return 'Supabase isn’t connected yet. Paste your Project URL in the box above.';
+  if(/failed to fetch|networkerror|load failed|network request failed/i.test(m))return `Can’t reach Supabase (${SB_HOST}). Check that the Project URL is right, your internet or VPN, and any ad blocker, then try again.`;
+  if(/invalid login/i.test(m))return 'Email or password is incorrect.';
+  if(/email not confirmed/i.test(m))return 'Please confirm your email first, or turn off “Confirm email” in Supabase.';
+  return m;
+}
 async function doAuth(){
+  if(!SB_READY)return fail(authMsg(''));
   const t=ui.authTab,email=val('a-email').trim(),pw=val('a-pw');
   if(!emailOk(email))return fail('Enter a valid email address.');
   if(t!=='forgot'&&pw.length<6)return fail('Passwords need at least 6 characters.');
@@ -1254,23 +1277,23 @@ async function doAuth(){
       const name=val('a-name').trim();if(!name)return fail('Enter your name.');
       const tzv=val('a-tz')||DEFAULT_TZ;
       const{data,error}=await sb.auth.signUp({email,password:pw,options:{data:{name,tz:tzv}}});
-      if(error)return fail(error.message);
+      if(error)return fail(authMsg(error.message));
       if(!data.session){ui.authTab='login';ui.busy=false;ui.msg={ok:true,text:'Check your email to confirm, then log in.'};return render();}
       acct={key:data.user.id,name,email:data.user.email,tz:tzv,remember};sessSet(acct);
       D=blankData();resetUi();ui.tab='account';applyTheme(defaultTheme());commit({now:true});
       ui.busy=false;render();toast(`Welcome to FlowSpace, ${name}`);
     }else if(t==='login'){
       const{data,error}=await sb.auth.signInWithPassword({email,password:pw});
-      if(error)return fail(/invalid login/i.test(error.message)?'Email or password is incorrect.':error.message);
+      if(error)return fail(authMsg(error.message));
       const m=data.user.user_metadata||{};
       acct={key:data.user.id,name:m.name||email.split('@')[0],email:data.user.email,tz:m.tz||DEFAULT_TZ,remember};sessSet(acct);
       const tab=ui.tab;D=await pullData(acct.key);resetUi();ui.tab=tab;applyTheme();ui.busy=false;render();toast(`Welcome back, ${acct.name}`);
     }else{
       const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-      if(error)return fail(error.message);
+      if(error)return fail(authMsg(error.message));
       ui.msg={ok:true,text:'If that email has an account, a reset link is on its way.'};ui.busy=false;render();
     }
-  }catch(e){fail('Can’t reach the cloud right now. Check your connection and try again.');}
+  }catch(e){fail(authMsg(e&&e.message||'Failed to fetch'));}
 }
 async function doChangePw(){
   const cur=val('c-cur'),n1=val('c-new'),n2=val('c-new2');
@@ -1281,9 +1304,9 @@ async function doChangePw(){
     const chk=await sb.auth.signInWithPassword({email:acct.email,password:cur});
     if(chk.error)return fail('Your current password is incorrect.');
     const{error}=await sb.auth.updateUser({password:n1});
-    if(error)return fail(error.message);
+    if(error)return fail(authMsg(error.message));
     clearVals('c-');ui.msg={ok:true,text:'Password changed.'};ui.busy=false;render();
-  }catch(e){fail('Can’t reach the cloud right now. Try again in a moment.');}
+  }catch(e){fail(authMsg(e&&e.message||'Failed to fetch'));}
 }
 
 /* =================== EVENTS =================== */
@@ -1298,9 +1321,10 @@ document.addEventListener('click',e=>{
   if(t.type==='checkbox')e.preventDefault();
   snapshot();A[t.dataset.a](t,e);
 },true);
+function syncBp(f){const sel=document.getElementById(f+'-bp'),v=sel?sel.value:'';$$(`[data-a="bpPick"][data-f="${f}"]`).forEach(c=>{const on=c.dataset.v===v;c.classList.toggle('on',on);c.setAttribute('aria-pressed',on);});}
 const keepSync=e=>{const el=e.target;if(el&&el.matches&&el.matches('[data-keep]')&&el.id)ui.vals[el.id]=el.type==='checkbox'?el.checked:el.value;};
 document.addEventListener('input',keepSync);
-document.addEventListener('change',e=>{const el=e.target;if(el&&(el.tagName==='SELECT'||el.type==='checkbox'))keepSync(e);});
+document.addEventListener('change',e=>{const el=e.target;if(el&&(el.tagName==='SELECT'||el.type==='checkbox')){keepSync(e);if(el.tagName==='SELECT'&&/-bp$/.test(el.id))syncBp(el.id.slice(0,-3));}});
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.ac&&!el.dataset.in)showAc(el);if(el.dataset.in&&IN[el.dataset.in]){if(el.dataset.in==='search')snapshot();IN[el.dataset.in](el,e);}});
 document.addEventListener('focusin',e=>{const el=e.target;if(el.dataset&&el.dataset.ac&&el.value)showAc(el);});
 document.addEventListener('change',async e=>{const el=e.target;
