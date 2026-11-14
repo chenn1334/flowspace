@@ -216,6 +216,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .proud-box{font-size:1.1rem}
 .lgrp{margin-top:1.3rem}.lgrp-h{display:flex;align-items:center;gap:.55rem;width:100%;text-align:left;background:none;border:0;border-bottom:2px solid var(--border);border-radius:0;font:inherit;font-weight:800;font-size:1.1rem;color:var(--text);padding:.4rem .1rem .55rem;cursor:pointer}
 .lgrp-h .tag{margin-left:auto}
+.lgrp-sub{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin:1rem 0 .35rem;padding:.2rem .1rem .35rem;border-bottom:1px solid var(--border);font-weight:800;font-size:.95rem}
+.lgrp-sub small,.lgrp-sub .small{font-weight:600}
 .won{display:inline-flex;gap:.4rem;align-items:center;background:color-mix(in srgb,var(--accent) 25%,var(--surface));color:var(--accent-ink);font-weight:800;padding:.35rem .8rem;border-radius:999px}
 
 /* ---------- calendar ---------- */
@@ -752,7 +754,7 @@ function vTimer(){
     <div class="card"><div class="row between"><h3>📋 Routine Order</h3><button class="btn sm" data-a="toggle" data-k="taddst">${ui.open.taddst?'Close':'+ Add Stretch'}</button></div>
       ${s.stretches.length?`<p class="small"><b>${totalLabel(s.stretches)}</b></p>`:''}
       ${ui.open.taddst?`<div class="panel">${sForm('tf',{lib:true,submit:'addToSession'})}</div>`:''}
-      <div class="mt" data-dropzone="st">${s.stretches.length?s.stretches.map((st,i)=>stRow(st,i,true)).join(''):'<p class="muted small">No stretches yet.</p>'}</div></div>
+      ${stListHtml(s.stretches,'timer',-1,'<p class="muted small mt">No stretches yet.</p>')}</div>
   </div>
   <div class="card"><button class="btn" data-a="toggle" data-k="settings" aria-expanded="${!!ui.open.settings}">⚙️ Stretch Settings ${ui.open.settings?'▴':'▾'}</button>
   ${ui.open.settings?`<div class="drawer grid2 mt">
@@ -771,6 +773,35 @@ function stRow(st,i,timer){
     <span class="lt" ${timer?`data-a="tJump" data-i="${i}" style="cursor:pointer"`:''}><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2 sides':''}${st.bodyPart?' · '+esc(st.bodyPart):''}</span></span>
     <span class="arrows"><button data-a="stMove" data-i="${i}" data-d="-1" aria-label="Move up">↑</button><button data-a="stMove" data-i="${i}" data-d="1" aria-label="Move down">↓</button></span>
     ${!timer?`<button class="btn sm ghost" data-a="stEdit" data-i="${i}">✏️</button>`:''}${xBtn('stDel',`data-i="${i}"`)}</div>`;
+}
+
+/* ----- body-area grouping (used on every page that lists stretches) ----- */
+const groupOn=()=>D.settings.groupArea!==false;
+function areaSections(list,sortByName){
+  const bk=x=>(x.bodyPart||'').trim(),order=[...D.bodyParts];
+  list.forEach(x=>{const k=bk(x);if(k&&!order.includes(k))order.push(k);});
+  return[...order,''].map(k=>{let items=list.map((st,i)=>({st,i})).filter(o=>bk(o.st)===k);
+    if(sortByName)items=items.sort((a,b)=>a.st.name.localeCompare(b.st.name));return{k,items};}).filter(g=>g.items.length);
+}
+const areaHead=(k,right)=>`<div class="lgrp-sub"><span>${esc(k||'No body area')}</span><span class="small muted">${right}</span></div>`;
+const groupSeg=()=>`<div class="seg mt"><button class="${groupOn()?'':'on'}" data-a="groupSet" data-v="0">↕ Routine order</button><button class="${groupOn()?'on':''}" data-a="groupSet" data-v="1">🗂 By body area</button></div>`;
+const draftRow=(st,i)=>`<div class="li hx" draggable="true" data-drag="dst" data-i="${i}"><span class="handle">⠿</span>${st.img?`<img class="thumb" src="${esc(st.img)}" alt="">`:''}<span class="lt"><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2':''}</span></span>
+      <span class="arrows"><button data-a="dMove" data-i="${i}" data-d="-1" aria-label="Move up">↑</button><button data-a="dMove" data-i="${i}" data-d="1" aria-label="Move down">↓</button></span>${xBtn('dDel',`data-i="${i}"`)}</div>`;
+function stRowG(st,i,kind){
+  return`<div class="li hx ${kind==='timer'&&i===T.idx?'cur':''}" ${kind==='timer'?`data-ti="${i}"`:''}>
+    <span class="muted small" style="min-width:1.5rem;font-weight:800">${i+1}.</span>${st.img?`<img class="thumb" src="${esc(st.img)}" alt="" onerror="this.remove()">`:''}
+    <span class="lt" ${kind==='timer'?`data-a="tJump" data-i="${i}" style="cursor:pointer"`:''}><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2 sides':''}</span></span>
+    ${kind==='routine'?`<button class="btn sm ghost" data-a="stEdit" data-i="${i}">✏️</button>`:''}${xBtn(kind==='draft'?'dDel':'stDel',`data-i="${i}"`)}</div>`;
+}
+function stListHtml(list,kind,ed,emptyHtml){
+  if(!list.length)return emptyHtml;
+  const toggle=list.length>1?groupSeg():'';
+  if(!groupOn()||list.length<2){
+    const rows=list.map((st,i)=>kind==='draft'?draftRow(st,i):(kind==='routine'&&i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${i}"`})}</div>`:stRow(st,i,kind==='timer'))).join('');
+    return toggle+`<div class="mt" data-dropzone="${kind==='draft'?'dst':'st'}">${rows}</div>`;
+  }
+  const secs=areaSections(list).map(g=>areaHead(g.k,`${g.items.length} · ${fmtLong(sessSecs(g.items.map(o=>o.st)))}`)+g.items.map(o=>kind==='routine'&&o.i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${o.i}"`})}</div>`:stRowG(o.st,o.i,kind)).join('')).join('');
+  return toggle+`<p class="small muted mt">Grouped by body area. Numbers show the order the routine runs in. Switch to Routine order to drag or reorder.</p><div>${secs}</div>`;
 }
 
 /* ----- stretch form (shared) ----- */
@@ -808,8 +839,8 @@ function addToList(list,st,label){if(dupIn(list,st.name)){toast(`“${st.name}�
 function vRoutine(){
   const s=session();if(!s)return'';
   const ed=ui.editing&&ui.editing.where==='sess'?ui.editing.i:-1;
-  return`<div class="grid2 mt"><div class="card"><h3>${esc(s.name)}</h3><p class="small muted">Drag, or use the arrows, to reorder.</p>${s.stretches.length?`<p class="small"><b>${totalLabel(s.stretches)}</b></p>`:''}
-    <div class="mt" data-dropzone="st">${s.stretches.length?s.stretches.map((st,i)=>i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${i}"`})}</div>`:stRow(st,i,false)).join(''):empty('🌿','No stretches in this session yet','Create one on the right, or pull one from your library.')}</div></div>
+  return`<div class="grid2 mt"><div class="card"><h3>${esc(s.name)}</h3>${groupOn()&&s.stretches.length>1?'':'<p class="small muted">Drag, or use the arrows, to reorder.</p>'}${s.stretches.length?`<p class="small"><b>${totalLabel(s.stretches)}</b></p>`:''}
+    ${stListHtml(s.stretches,'routine',ed,`<div class="mt">${empty('🌿','No stretches in this session yet','Create one on the right, or pull one from your library.')}</div>`)}</div>
   <div class="stack"><div class="card"><h3>Add a new stretch</h3>${sForm('rf',{lib:true,submit:'addToSession'})}</div>
     ${D.library.length?`<div class="card"><h3>Add from your library</h3>${libPicker('rl','sess')}</div>`:''}</div></div>`;
 }
@@ -817,9 +848,10 @@ function libPicker(id,target){
   const q=ui.search[id]||'';const tname=target==='sess'?(session()?.name||'session'):(ui.draft.name.trim()||'New Session');
   const list=target==='sess'?session().stretches:ui.draft.stretches;
   const items=D.library.filter(l=>similar(q,l.name+' '+(l.bodyPart||'')+' '+(l.desc||'')));
+  const pick=l=>{const has=dupIn(list,l.name);return`<div class="li">${l.img?`<img class="thumb" src="${esc(l.img)}" alt="" onerror="this.remove()">`:''}<span class="lt"><b>${esc(l.name)}</b><br><span class="small muted">${fmtTime(dur(l))}${l.bilateral?' × 2':''}${l.bodyPart?' · '+esc(l.bodyPart):''}</span></span>
+    <button class="btn sm ${has?'':'acc'}" data-a="libAdd" data-id="${l.id}" data-t="${target}" ${has?'disabled':''}>${has?'✓ Added':'+ Add to '+esc(tname)}</button></div>`;};
   return`<div class="ac-wrap mt"><input class="in" id="${id}" data-in="search" data-k="${id}" data-ac="${id}" data-acmode="add-${target}" value="${esc(q)}" placeholder="Search your library" autocomplete="off"><div class="ac" id="${id}-ac" hidden></div></div>
-  <div class="mt">${items.length?items.map(l=>{const has=dupIn(list,l.name);return`<div class="li">${l.img?`<img class="thumb" src="${esc(l.img)}" alt="" onerror="this.remove()">`:''}<span class="lt"><b>${esc(l.name)}</b><br><span class="small muted">${fmtTime(dur(l))}${l.bilateral?' × 2':''}${l.bodyPart?' · '+esc(l.bodyPart):''}</span></span>
-    <button class="btn sm ${has?'':'acc'}" data-a="libAdd" data-id="${l.id}" data-t="${target}" ${has?'disabled':''}>${has?'✓ Added':'+ Add to '+esc(tname)}</button></div>`;}).join(''):`<p class="small muted">No stretches match “${esc(q)}”.</p>`}</div>`;
+  <div class="mt">${items.length?areaSections(items,true).map(g=>areaHead(g.k,g.items.length)+g.items.map(o=>pick(o.st)).join('')).join(''):`<p class="small muted">No stretches match “${esc(q)}”.</p>`}</div>`;
 }
 
 /* ----- library ----- */
@@ -856,8 +888,7 @@ function vBuilder(){
   <div class="grid2"><div class="stack"><div class="card"><label class="f" for="dname" style="margin-top:0">Session name</label>
     <input class="in" id="dname" data-in="draftName" value="${esc(d.name)}" placeholder="Morning Mobility, Desk Reset, Before Bed…">
     <h3 class="mt2">Stretches (${d.stretches.length})</h3>${d.stretches.length?`<p class="small"><b>${totalLabel(d.stretches)}</b></p>`:''}
-    <div class="mt" data-dropzone="dst">${d.stretches.length?d.stretches.map((st,i)=>`<div class="li hx" draggable="true" data-drag="dst" data-i="${i}"><span class="handle">⠿</span>${st.img?`<img class="thumb" src="${esc(st.img)}" alt="">`:''}<span class="lt"><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2':''}</span></span>
-      <span class="arrows"><button data-a="dMove" data-i="${i}" data-d="-1" aria-label="Move up">↑</button><button data-a="dMove" data-i="${i}" data-d="1" aria-label="Move down">↓</button></span>${xBtn('dDel',`data-i="${i}"`)}</div>`).join(''):'<p class="small muted">Start from zero: create stretches or pick them from your library.</p>'}</div>
+    ${stListHtml(d.stretches,'draft',-1,'<p class="small muted mt">Start from zero: create stretches or pick them from your library.</p>')}
     <div class="row mt2"><button class="btn pri lg" data-a="builderSave">Create Session</button><button class="btn ghost" data-a="builderCancel">Cancel</button></div></div>
     ${D.library.length?`<div class="card"><h3>Pick from your Personal Library</h3>${libPicker('bl','draft')}</div>`:''}</div>
   <div class="card"><h3>Create a new stretch</h3>${sForm('bf',{lib:true,submit:'draftAdd'})}</div></div>`;
@@ -1126,6 +1157,7 @@ const A={
   libToSess(el){const l=D.library.find(x=>x.id===el.dataset.id),s=D.sessions.find(x=>x.id===el.dataset.s);if(!l||!s)return;
     if(addToList(s.stretches,{...l,libId:l.id},`“${s.name}”`)){commit();toast(`Added to ${s.name}`);}render();},
   libCreate(){const r=readForm('lf');if(!r)return;if(!addToLibrary(r.st))return;resetForm('lf');ui.open.libnew=false;commit();render();toast('Saved to your library');},
+  groupSet(el){D.settings.groupArea=el.dataset.v==='1';commit();render();},
   libGroup(el){ui.libCollapsed=ui.libCollapsed||{};ui.libCollapsed[el.dataset.v]=!ui.libCollapsed[el.dataset.v];render();},
   formClear(el){const f=el.dataset.f;resetForm(f);ui.open['bp-'+f]=false;render();$('#'+f+'-name')?.focus();toast('Form cleared');},
   libEdit(el){const l=D.library.find(x=>x.id===el.dataset.id);if(ui.libCollapsed)ui.libCollapsed[(l.bodyPart||'').trim()]=false;ui.editing={where:'lib',id:l.id};loadForm('lef',l);render();},
