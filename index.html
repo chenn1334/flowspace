@@ -69,8 +69,8 @@ main{max-width:1180px;margin:0 auto;padding:1.4rem 1.2rem 4rem}
 @keyframes pop{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
 .card+.card,.stack>*+*,.grid2+.card,.grid3+.card,.card+.grid2,.card+.grid3{margin-top:1rem}
 .grid2>*,.grid3>*{margin-top:0!important}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
-.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:1rem}
 .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .between{justify-content:space-between}
 .muted{color:var(--muted)}
@@ -218,6 +218,20 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .lgrp-h .tag{margin-left:auto}
 .lgrp-sub{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin:1rem 0 .35rem;padding:.2rem .1rem .35rem;border-bottom:1px solid var(--border);font-weight:800;font-size:.95rem}
 .lgrp-sub small,.lgrp-sub .small{font-weight:600}
+/* collapsible body-area headers (routine, timer list, pickers) */
+.lgrp-toggle{width:100%;background:none;border:0;border-bottom:1px solid var(--border);border-radius:0;text-align:left;cursor:pointer;color:var(--text);font:inherit;font-weight:800;font-size:.95rem;padding:.2rem .1rem .35rem}
+.lgrp-toggle .lg-l{display:inline-flex;align-items:center;gap:.5rem;min-width:0}
+.lgrp-toggle .car{width:1rem;color:var(--muted);flex:none}
+.lgrp-toggle:hover .car{color:var(--text)}
+.lgrp-toggle:hover{border-bottom-color:var(--primary)}
+/* library: equal-height cards, consistent image ratio, edit form that fits */
+.libcard{display:flex;flex-direction:column;min-width:0}
+.libcard .lib-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:16px;margin-bottom:.8rem;background:var(--surface2)}
+.libcard .acts{margin-top:auto;padding-top:.9rem}
+.editcard{grid-column:1/-1}
+.fitform .sform{max-width:720px;margin-inline:auto}
+.sform .grid2{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.sform .grid2>*,.sform .row>select{min-width:0}
 .won{display:inline-flex;gap:.4rem;align-items:center;background:color-mix(in srgb,var(--accent) 25%,var(--surface));color:var(--accent-ink);font-weight:800;padding:.35rem .8rem;border-radius:999px}
 
 /* ---------- calendar ---------- */
@@ -783,7 +797,8 @@ function areaSections(list,sortByName){
   return[...order,''].map(k=>{let items=list.map((st,i)=>({st,i})).filter(o=>bk(o.st)===k);
     if(sortByName)items=items.sort((a,b)=>a.st.name.localeCompare(b.st.name));return{k,items};}).filter(g=>g.items.length);
 }
-const areaHead=(k,right)=>`<div class="lgrp-sub"><span>${esc(k||'No body area')}</span><span class="small muted">${right}</span></div>`;
+const grpOpen=(scope,k)=>!(ui.grpC&&ui.grpC[scope+'|'+k]);
+const areaHead=(k,right,scope,open)=>`<button type="button" class="lgrp-sub lgrp-toggle" data-a="grpToggle" data-s="${scope}" data-v="${esc(k)}" aria-expanded="${open}"><span class="lg-l"><span class="car" aria-hidden="true">${open?'▾':'▸'}</span><span>${esc(k||'No body area')}</span></span><span class="small muted">${right}</span></button>`;
 const groupSeg=()=>`<div class="seg mt"><button class="${groupOn()?'':'on'}" data-a="groupSet" data-v="0">↕ Routine order</button><button class="${groupOn()?'on':''}" data-a="groupSet" data-v="1">🗂 By body area</button></div>`;
 const draftRow=(st,i)=>`<div class="li hx" draggable="true" data-drag="dst" data-i="${i}"><span class="handle">⠿</span>${st.img?`<img class="thumb" src="${esc(st.img)}" alt="">`:''}<span class="lt"><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2':''}</span></span>
       <span class="arrows"><button data-a="dMove" data-i="${i}" data-d="-1" aria-label="Move up">↑</button><button data-a="dMove" data-i="${i}" data-d="1" aria-label="Move down">↓</button></span>${xBtn('dDel',`data-i="${i}"`)}</div>`;
@@ -800,7 +815,8 @@ function stListHtml(list,kind,ed,emptyHtml){
     const rows=list.map((st,i)=>kind==='draft'?draftRow(st,i):(kind==='routine'&&i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${i}"`})}</div>`:stRow(st,i,kind==='timer'))).join('');
     return toggle+`<div class="mt" data-dropzone="${kind==='draft'?'dst':'st'}">${rows}</div>`;
   }
-  const secs=areaSections(list).map(g=>areaHead(g.k,`${g.items.length} · ${fmtLong(sessSecs(g.items.map(o=>o.st)))}`)+g.items.map(o=>kind==='routine'&&o.i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${o.i}"`})}</div>`:stRowG(o.st,o.i,kind)).join('')).join('');
+  const secs=areaSections(list).map(g=>{const hasEd=kind==='routine'&&g.items.some(o=>o.i===ed),open=hasEd||grpOpen(kind,g.k);
+    return areaHead(g.k,`${g.items.length} · ${fmtLong(sessSecs(g.items.map(o=>o.st)))}`,kind,open)+(open?g.items.map(o=>kind==='routine'&&o.i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${o.i}"`})}</div>`:stRowG(o.st,o.i,kind)).join(''):'');}).join('');
   return toggle+`<p class="small muted mt">Grouped by body area. Numbers show the order the routine runs in. Switch to Routine order to drag or reorder.</p><div>${secs}</div>`;
 }
 
@@ -830,6 +846,7 @@ function readForm(fid){
   const f=ui.form[fid]||{};const lib=document.getElementById(fid+'-lib');
   return{st:{id:uid(),name,desc:g('desc').trim(),duration:clamp(+g('dur')||30,1,3600),bodyPart:g('bp'),bilateral:!!f.bil,startSide:f.side||'L',img:ui.img[fid]||''},toLib:lib?lib.checked:false};
 }
+function showForm(fid){requestAnimationFrame(()=>document.querySelector(`.sform[data-fid="${fid}"]`)?.scrollIntoView({block:'nearest'}));}
 function resetForm(fid){clearVals(fid+'-');delete ui.form[fid];delete ui.img[fid];}
 function dupIn(list,name,ignoreId){return list.some(x=>norm(x.name)===norm(name)&&x.id!==ignoreId);}
 function addToLibrary(st,quiet){if(dupIn(D.library,st.name)){if(!quiet)toast(`“${st.name}” is already in your library.`);return false;}D.library.push({...st,id:uid()});return true;}
@@ -851,20 +868,20 @@ function libPicker(id,target){
   const pick=l=>{const has=dupIn(list,l.name);return`<div class="li">${l.img?`<img class="thumb" src="${esc(l.img)}" alt="" onerror="this.remove()">`:''}<span class="lt"><b>${esc(l.name)}</b><br><span class="small muted">${fmtTime(dur(l))}${l.bilateral?' × 2':''}${l.bodyPart?' · '+esc(l.bodyPart):''}</span></span>
     <button class="btn sm ${has?'':'acc'}" data-a="libAdd" data-id="${l.id}" data-t="${target}" ${has?'disabled':''}>${has?'✓ Added':'+ Add to '+esc(tname)}</button></div>`;};
   return`<div class="ac-wrap mt"><input class="in" id="${id}" data-in="search" data-k="${id}" data-ac="${id}" data-acmode="add-${target}" value="${esc(q)}" placeholder="Search your library" autocomplete="off"><div class="ac" id="${id}-ac" hidden></div></div>
-  <div class="mt">${items.length?areaSections(items,true).map(g=>areaHead(g.k,g.items.length)+g.items.map(o=>pick(o.st)).join('')).join(''):`<p class="small muted">No stretches match “${esc(q)}”.</p>`}</div>`;
+  <div class="mt">${items.length?areaSections(items,true).map(g=>{const op=!!q.trim()||grpOpen(id,g.k);return areaHead(g.k,g.items.length,id,op)+(op?g.items.map(o=>pick(o.st)).join(''):'');}).join(''):`<p class="small muted">No stretches match “${esc(q)}”.</p>`}</div>`;
 }
 
 /* ----- library ----- */
 function vLibrary(){
   const q=ui.search.lib||'';const items=D.library.filter(l=>similar(q,l.name+' '+(l.bodyPart||'')+' '+(l.desc||'')));
   const ed=ui.editing&&ui.editing.where==='lib'?ui.editing.id:null;
-  const libCard=l=>l.id===ed?`<div class="card">${sForm('lef',{submit:'libSave',label:'Save changes',cancel:'editCancel',extra:`data-id="${l.id}"`})}</div>`:
-   `<div class="card hx" style="position:relative">${xBtn('libDel',`data-id="${l.id}" style="position:absolute;top:10px;right:10px"`)}
-    ${l.img?`<img src="${esc(l.img)}" alt="${esc(l.name)}" style="width:100%;height:150px;object-fit:cover;border-radius:16px;margin-bottom:.7rem" onerror="this.remove()">`:''}
+  const libCard=l=>l.id===ed?`<div class="card editcard fitform">${sForm('lef',{submit:'libSave',label:'Save changes',cancel:'editCancel',extra:`data-id="${l.id}"`})}</div>`:
+   `<div class="card hx libcard" style="position:relative">${xBtn('libDel',`data-id="${l.id}" style="position:absolute;top:10px;right:10px"`)}
+    ${l.img?`<img class="lib-img" src="${esc(l.img)}" alt="${esc(l.name)}" onerror="this.remove()">`:''}
     <h3 style="word-break:break-word;padding-right:1.5rem">${esc(l.name)}</h3>
     <div class="row mt">${l.bodyPart?`<span class="tag">${esc(l.bodyPart)}</span>`:''}<span class="tag acc">${l.bilateral?(l.startSide==='R'?'Right → Left':'Left → Right'):'Single'}</span><span class="tag">${fmtTime(dur(l))}</span></div>
     ${l.desc?`<p class="small muted mt" style="white-space:pre-wrap">${esc(l.desc)}</p>`:''}
-    <div class="row mt">${D.sessions.map(s=>{const has=dupIn(s.stretches,l.name);return`<button class="btn sm ${has?'':'acc'}" data-a="libToSess" data-id="${l.id}" data-s="${s.id}" ${has?'disabled':''}>${has?'✓ In '+esc(s.name):'+ Add to '+esc(s.name)}</button>`;}).join('')}
+    <div class="row mt acts">${D.sessions.map(s=>{const has=dupIn(s.stretches,l.name);return`<button class="btn sm ${has?'':'acc'}" data-a="libToSess" data-id="${l.id}" data-s="${s.id}" ${has?'disabled':''}>${has?'✓ In '+esc(s.name):'+ Add to '+esc(s.name)}</button>`;}).join('')}
     <button class="btn sm ghost" data-a="libEdit" data-id="${l.id}">✏️ Edit</button></div></div>`;
   // organise by target body area: your own body-part order first, then any others, then "No body area"
   const bk=l=>(l.bodyPart||'').trim(),order=[...D.bodyParts];
@@ -872,10 +889,10 @@ function vLibrary(){
   const searching=!!q.trim();
   const sections=[...order,''].map(k=>({k,list:items.filter(l=>bk(l)===k).sort((x,y)=>x.name.localeCompare(y.name))})).filter(x=>x.list.length);
   const groupsHtml=sections.map(x=>{const open=searching||!(ui.libCollapsed&&ui.libCollapsed[x.k]);
-    return`<section class="lgrp"><button type="button" class="lgrp-h" data-a="libGroup" data-v="${esc(x.k)}" aria-expanded="${open}"><span aria-hidden="true">${open?'▾':'▸'}</span><span>${esc(x.k||'No body area')}</span><span class="tag">${x.list.length}</span></button>${open?`<div class="grid3 mt">${x.list.map(libCard).join('')}</div>`:''}</section>`;}).join('');
+    return`<section class="lgrp"><button type="button" class="lgrp-h" data-a="libGroup" data-v="${esc(x.k)}" aria-expanded="${open}"><span aria-hidden="true">${open?'▾':'▸'}</span><span>${esc(x.k||'No body area')}</span><span class="tag">${x.list.length}</span></button>${open?`<div class="grid3 mt libgrid">${x.list.map(libCard).join('')}</div>`:''}</section>`;}).join('');
   return`<div class="card"><div class="row"><div class="ac-wrap" style="flex:1 1 240px"><input class="in" id="libq" data-in="search" data-k="lib" data-ac="libq" data-acmode="lib" value="${esc(q)}" placeholder="Search stretches, body parts, cues" autocomplete="off"><div class="ac" id="libq-ac" hidden></div></div>
     <button class="btn pri" data-a="toggle" data-k="libnew">${ui.open.libnew?'Close':'+ New Stretch'}</button></div>
-    ${ui.open.libnew?`<div class="panel">${sForm('lf',{submit:'libCreate',label:'Save to Library'})}</div>`:''}</div>
+    ${ui.open.libnew?`<div class="panel fitform">${sForm('lf',{submit:'libCreate',label:'Save to Library'})}</div>`:''}</div>
   ${!D.library.length?`<div class="mt">${empty('★','Your Personal Library is empty','Stretches you create are saved here for one-click reuse across sessions.')}</div>`:
   `<div class="mt">${groupsHtml}
    ${!items.length?`<p class="muted mt">No stretches match “${esc(q)}”.</p>`:''}</div>`}`;
@@ -1083,7 +1100,7 @@ const addMonths=(mo,n)=>{let[y,m]=mo.split('-').map(Number);m+=n;while(m>12){m-=
 const curMeal=()=>ui.page&&ui.page.startsWith('meal:')?findMeal(ui.page.slice(5)):null;
 const entry=()=>getEntry(ui.diaryDate);
 function cloudProfile(patch){if(acct)sb.auth.updateUser({data:patch}).then(({error})=>{if(error)toast('Saved here. The cloud will update when you’re back online.');});}
-function resetUi(){Object.assign(ui,{sub:{stretch:'timer',planner:'goals',diary:'entry'},open:{},draft:null,draftMeal:null,editing:null,img:{},showPw:{},emoji:{},search:{},cal:null,themeOpen:false,histMonth:null,msg:null,vals:{},form:{},pages:{}});
+function resetUi(){Object.assign(ui,{sub:{stretch:'timer',planner:'goals',diary:'entry'},open:{},draft:null,draftMeal:null,editing:null,img:{},showPw:{},emoji:{},search:{},cal:null,themeOpen:false,histMonth:null,grpC:{},msg:null,vals:{},form:{},pages:{}});
   ui.week=mondayOf(todayStr());ui.diaryDate=todayStr();T.sid=null;tReset();}
 
 const A={
@@ -1142,7 +1159,7 @@ const A={
     resetForm(f);commit();render();},
   stMove(el){const s=session(),a=s.stretches,i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];if(T.idx===i)T.idx=j;else if(T.idx===j)T.idx=i;commit();render();},
   stDel(el){const s=session(),i=+el.dataset.i;s.stretches.splice(i,1);if(T.idx>i)T.idx--;if(T.idx>=s.stretches.length)tReset();commit();render();},
-  stEdit(el){const i=+el.dataset.i;ui.editing={where:'sess',i};loadForm('ef',session().stretches[i]);render();},
+  stEdit(el){const i=+el.dataset.i,st=session().stretches[i];if(ui.grpC)ui.grpC['routine|'+(st.bodyPart||'').trim()]=false;ui.editing={where:'sess',i};loadForm('ef',st);render();showForm('ef');},
   stSave(el){const s=session(),i=+el.dataset.i,cur=s.stretches[i];const r=readForm('ef');if(!r)return;
     if(dupIn(s.stretches,r.st.name,cur.id))return toast(`“${r.st.name}” is already in this session.`);
     Object.assign(cur,{...r.st,id:cur.id});ui.editing=null;resetForm('ef');commit();render();toast('Stretch updated');},
@@ -1158,9 +1175,10 @@ const A={
     if(addToList(s.stretches,{...l,libId:l.id},`“${s.name}”`)){commit();toast(`Added to ${s.name}`);}render();},
   libCreate(){const r=readForm('lf');if(!r)return;if(!addToLibrary(r.st))return;resetForm('lf');ui.open.libnew=false;commit();render();toast('Saved to your library');},
   groupSet(el){D.settings.groupArea=el.dataset.v==='1';commit();render();},
+  grpToggle(el){ui.grpC=ui.grpC||{};const k=el.dataset.s+'|'+el.dataset.v;ui.grpC[k]=!ui.grpC[k];render();},
   libGroup(el){ui.libCollapsed=ui.libCollapsed||{};ui.libCollapsed[el.dataset.v]=!ui.libCollapsed[el.dataset.v];render();},
   formClear(el){const f=el.dataset.f;resetForm(f);ui.open['bp-'+f]=false;render();$('#'+f+'-name')?.focus();toast('Form cleared');},
-  libEdit(el){const l=D.library.find(x=>x.id===el.dataset.id);if(ui.libCollapsed)ui.libCollapsed[(l.bodyPart||'').trim()]=false;ui.editing={where:'lib',id:l.id};loadForm('lef',l);render();},
+  libEdit(el){const l=D.library.find(x=>x.id===el.dataset.id);if(ui.libCollapsed)ui.libCollapsed[(l.bodyPart||'').trim()]=false;ui.editing={where:'lib',id:l.id};loadForm('lef',l);render();showForm('lef');},
   libSave(el){const l=D.library.find(x=>x.id===el.dataset.id);const r=readForm('lef');if(!r)return;
     if(dupIn(D.library,r.st.name,l.id))return toast(`“${r.st.name}” is already in your library.`);
     Object.assign(l,{...r.st,id:l.id});ui.editing=null;resetForm('lef');commit();render();toast('Library stretch updated');},
