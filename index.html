@@ -646,6 +646,11 @@ const T={sid:null,idx:0,side:0,phase:'idle',remain:0,total:0,running:false,last:
 const dur=st=>Math.max(1,+st?.duration||30);
 const sides=st=>st&&st.bilateral?(st.startSide==='R'?['Right','Left']:['Left','Right']):[null];
 const prepSec=()=>clamp(+D.settings.prep||0,0,600);
+// session totals: calculated live from the stretch list, so they update whenever anything is added, edited, removed or reordered
+const fmtLong=t=>{t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),x=t%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
+const sessSecs=l=>(l||[]).reduce((a,st)=>a+dur(st)*(st.bilateral?2:1),0);
+const sessPrep=l=>prepSec()*(l||[]).reduce((a,st)=>a+(st.bilateral?2:1),0);
+const totalLabel=l=>{if(!l||!l.length)return'';const t=sessSecs(l),p=sessPrep(l);return`⏱ ${fmtLong(t)} total${p?` · ${fmtLong(t+p)} with get-ready time`:''}`;};
 
 function vStretch(){
   if(ui.page==='builder')return vBuilder();
@@ -657,6 +662,7 @@ function sessionBar(){
   const s=session();
   return`<div class="card"><div class="pills" data-dropzone="sess">${D.sessions.map(x=>`<button class="pill ${x.id===D.activeSession?'on':''}" draggable="true" data-drag="sess" data-id="${x.id}" data-a="pickSess">${esc(x.name)}</button>`).join('')}
   <button class="pill chip add" data-a="newSession">+ New Session</button></div>
+  ${s&&s.stretches.length?`<p class="small mt"><b>${totalLabel(s.stretches)}</b> <span class="muted">· ${s.stretches.length} stretch${s.stretches.length>1?'es':''}</span></p>`:''}
   ${s?`<div class="row mt"><button class="btn sm ghost" data-a="toggle" data-k="rename">✏️ Edit Session</button><button class="btn sm ghost danger" data-a="delSession">🗑 Delete Session</button></div>`:''}
   ${s&&ui.open.rename?`<div class="panel"><label class="f" for="ren">Session name</label><input class="in" id="ren" value="${esc(s.name)}">
     <div class="row mt"><button class="btn pri sm" data-a="renameSess">Save name</button><button class="btn sm" data-a="moveSess" data-d="-1">◀ Move earlier</button><button class="btn sm" data-a="moveSess" data-d="1">Move later ▶</button><button class="btn sm ghost" data-a="toggle" data-k="rename">Cancel</button></div></div>`:''}</div>`;
@@ -742,6 +748,7 @@ function vTimer(){
       <div class="skips mt">${[-5,-10,-15,-30].map(n=>`<button data-a="tAdj" data-n="${n}">${n}s</button>`).join('')}<button class="plus" data-a="tAdj" data-n="10">+10s</button></div>
       <div class="addline"><input class="in" type="number" min="1" id="skipN" placeholder="Seconds" aria-label="Seconds to skip"><button class="btn pri" data-a="tSkipN">Skip</button></div></div>
     <div class="card"><div class="row between"><h3>📋 Routine Order</h3><button class="btn sm" data-a="toggle" data-k="taddst">${ui.open.taddst?'Close':'+ Add Stretch'}</button></div>
+      ${s.stretches.length?`<p class="small"><b>${totalLabel(s.stretches)}</b></p>`:''}
       ${ui.open.taddst?`<div class="panel">${sForm('tf',{lib:true,submit:'addToSession'})}</div>`:''}
       <div class="mt" data-dropzone="st">${s.stretches.length?s.stretches.map((st,i)=>stRow(st,i,true)).join(''):'<p class="muted small">No stretches yet.</p>'}</div></div>
   </div>
@@ -799,7 +806,7 @@ function addToList(list,st,label){if(dupIn(list,st.name)){toast(`“${st.name}�
 function vRoutine(){
   const s=session();if(!s)return'';
   const ed=ui.editing&&ui.editing.where==='sess'?ui.editing.i:-1;
-  return`<div class="grid2 mt"><div class="card"><h3>${esc(s.name)}</h3><p class="small muted">Drag, or use the arrows, to reorder.</p>
+  return`<div class="grid2 mt"><div class="card"><h3>${esc(s.name)}</h3><p class="small muted">Drag, or use the arrows, to reorder.</p>${s.stretches.length?`<p class="small"><b>${totalLabel(s.stretches)}</b></p>`:''}
     <div class="mt" data-dropzone="st">${s.stretches.length?s.stretches.map((st,i)=>i===ed?`<div class="panel">${sForm('ef',{submit:'stSave',label:'Save changes',cancel:'editCancel',extra:`data-i="${i}"`})}</div>`:stRow(st,i,false)).join(''):empty('🌿','No stretches in this session yet','Create one on the right, or pull one from your library.')}</div></div>
   <div class="stack"><div class="card"><h3>Add a new stretch</h3>${sForm('rf',{lib:true,submit:'addToSession'})}</div>
     ${D.library.length?`<div class="card"><h3>Add from your library</h3>${libPicker('rl','sess')}</div>`:''}</div></div>`;
@@ -838,7 +845,7 @@ function vBuilder(){
   return`<div class="head"><button class="btn ghost" data-a="builderCancel">← Back</button><h2>New Session</h2></div>
   <div class="grid2"><div class="stack"><div class="card"><label class="f" for="dname" style="margin-top:0">Session name</label>
     <input class="in" id="dname" data-in="draftName" value="${esc(d.name)}" placeholder="Morning Mobility, Desk Reset, Before Bed…">
-    <h3 class="mt2">Stretches (${d.stretches.length})</h3>
+    <h3 class="mt2">Stretches (${d.stretches.length})</h3>${d.stretches.length?`<p class="small"><b>${totalLabel(d.stretches)}</b></p>`:''}
     <div class="mt" data-dropzone="dst">${d.stretches.length?d.stretches.map((st,i)=>`<div class="li hx" draggable="true" data-drag="dst" data-i="${i}"><span class="handle">⠿</span>${st.img?`<img class="thumb" src="${esc(st.img)}" alt="">`:''}<span class="lt"><b>${esc(st.name)}</b><br><span class="small muted">${fmtTime(dur(st))}${st.bilateral?' × 2':''}</span></span>
       <span class="arrows"><button data-a="dMove" data-i="${i}" data-d="-1" aria-label="Move up">↑</button><button data-a="dMove" data-i="${i}" data-d="1" aria-label="Move down">↓</button></span>${xBtn('dDel',`data-i="${i}"`)}</div>`).join(''):'<p class="small muted">Start from zero: create stretches or pick them from your library.</p>'}</div>
     <div class="row mt2"><button class="btn pri lg" data-a="builderSave">Create Session</button><button class="btn ghost" data-a="builderCancel">Cancel</button></div></div>
