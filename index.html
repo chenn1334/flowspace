@@ -428,39 +428,74 @@ async function hashPw(pw,salt){
   const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:150000,hash:'SHA-256'},k,256);
   return[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-let pushTimer=null,lastSync='';
+let pushTimer=null,retryTimer=null,lastSync='',syncErr='',pullOK=false,holdLocal=false,syncing=false;
+// turn a Supabase/network error into something you can act on
+function syncErrText(e){
+  const m=String(e&&(e.message||e.details)||e||'Unknown error'),c=String(e&&e.code||'');
+  if(/failed to fetch|networkerror|load failed|network request failed/i.test(m))return`Can’t reach Supabase. Check your connection or any ad blocker. (${m})`;
+  if(c==='PGRST205'||c==='42P01'||/app_data.*(does not exist|schema cache)|schema cache/i.test(m))return`The app_data table doesn’t exist in Supabase yet. Run the setup SQL from the tutorial. (${m})`;
+  if(c==='42501'||/row-level security|permission denied/i.test(m))return`Supabase blocked access to app_data. Check that the four “own” policies exist. (${m})`;
+  if(/jwt|not authenticated|invalid api key|apikey/i.test(m))return`Your login or API key was rejected. Sign out and back in. (${m})`;
+  return m;
+}
+function paintSync(){
+  const el=$('#syncnote');if(el)el.innerHTML=syncLine();
+  const b=$('#syncbtn');if(b){b.disabled=syncing;b.textContent=syncing?'Syncing…':'↻ Sync now';}
+}
+function syncLine(){
+  if(syncErr)return`<b style="color:#c0392b">⚠️ Not syncing to the cloud.</b> ${esc(syncErr)}${holdLocal?'<br>Changes on this device are paused so they can’t overwrite your saved data.':'<br>Your changes are safe on this device and will upload once this is fixed.'}`;
+  return lastSync?'Saved to cloud at '+esc(lastSync):'Your progress saves automatically.';
+}
 function commit(opts={}){
   D.updatedAt=Date.now();
   if(!acct)return;
+  if(holdLocal){paintSync();return;}   // this device never read your cloud data: don't save a blank copy over it
   store.set('data:'+acct.key,D);
   clearTimeout(pushTimer);
   pushTimer=setTimeout(pushCloud,opts.now?50:1200);
 }
 async function pushCloud(){
   if(!acct)return;
+  if(!pullOK){paintSync();return;}     // never upload before we've successfully read the cloud copy
   try{
     const{error}=await sb.from('app_data').upsert({user_id:acct.key,blob:D,updated_at:D.updatedAt,schema_v:SCHEMA});
     if(error)throw error;
+    syncErr='';
     lastSync=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-    const s=$('#syncnote');if(s)s.textContent='Saved to cloud at '+lastSync;
+    paintSync();
   }catch(e){
-    const s=$('#syncnote');if(s)s.textContent='Saved on this device. Cloud save will retry.';
+    syncErr=syncErrText(e);paintSync();
     clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,15000);
   }
 }
 async function pullData(key){
-  let local=await store.get('data:'+key);let remote=null;
+  let local=await store.get('data:'+key);let remote=null,failed=false;
   try{
     const{data,error}=await sb.from('app_data').select('blob,updated_at').eq('user_id',key).maybeSingle();
     if(error)throw error;
+    pullOK=true;holdLocal=false;syncErr='';
     if(data&&data.blob)remote={d:data.blob,t:+data.updated_at||0};
-  }catch(e){}
+  }catch(e){failed=true;pullOK=false;syncErr=syncErrText(e);holdLocal=!local;}
+  if(failed){
+    clearTimeout(retryTimer);retryTimer=setTimeout(()=>syncNow(true),20000);
+    return local?migrate(local):blankData();
+  }
   if(remote&&(!local||remote.t>=(local.updatedAt||0)))return migrate(remote.d);
   if(local){const m=migrate(local);setTimeout(()=>pushCloud(),500);return m;}
   // one-time import of old Firebase data (same email)
   try{const old=acct&&await fb('data/'+ekey(acct.email));
     if(old&&old.blob){const m=migrate(JSON.parse(old.blob));setTimeout(()=>pushCloud(),500);return m;}}catch(e){}
   return blankData();
+}
+// pull from the cloud (and push anything newer from this device). Used by the Sync now button and automatic retries.
+async function syncNow(quiet){
+  if(!acct||syncing)return;
+  syncing=true;paintSync();
+  const m=await pullData(acct.key);
+  syncing=false;
+  if(pullOK){D=m;T.sid=null;applyTheme();if(!document.activeElement?.matches('input,textarea'))render();}
+  paintSync();
+  if(!quiet)toast(pullOK?'Synced with the cloud':'Couldn’t reach your cloud data. See the Account tab.');
 }
 
 /* ---------- color + theme ---------- */
@@ -1071,7 +1106,7 @@ function vAccount(){
     <label class="f" for="p-name">Display name</label><div class="addline" style="margin-top:0"><input class="in" id="p-name" value="${esc(acct.name)}" data-enter="nameSave"><button class="btn" data-a="nameSave">Save</button></div>
     <label class="f">Email address</label><p>${esc(acct.email)}</p>
     <label class="f" for="p-tz">Time zone</label>${tzSelect('p-tz',acct.tz,'data-ch="acctTz"')}
-    <p class="small muted mt" id="syncnote">${lastSync?'Saved to cloud at '+lastSync:'Your progress saves automatically.'}</p>
+    <p class="small muted mt" id="syncnote">${syncLine()}</p><button class="btn sm mt" id="syncbtn" data-a="syncNow">↻ Sync now</button>
     <button class="btn danger mt2" data-a="signOut">Sign Out</button></div>
   <div class="card"><h3>Change password</h3>${pwField('c-cur','Current password','current-password')}${pwField('c-new','New password','new-password')}${pwField('c-new2','Confirm new password','new-password')}
     ${msg}<button class="btn pri mt2" data-a="changePw" ${ui.busy?'disabled':''}>Change Password</button></div></div>`;
@@ -1175,6 +1210,7 @@ const A={
     if(addToList(s.stretches,{...l,libId:l.id},`“${s.name}”`)){commit();toast(`Added to ${s.name}`);}render();},
   libCreate(){const r=readForm('lf');if(!r)return;if(!addToLibrary(r.st))return;resetForm('lf');ui.open.libnew=false;commit();render();toast('Saved to your library');},
   groupSet(el){D.settings.groupArea=el.dataset.v==='1';commit();render();},
+  syncNow(){syncNow();},
   grpToggle(el){ui.grpC=ui.grpC||{};const k=el.dataset.s+'|'+el.dataset.v;ui.grpC[k]=!ui.grpC[k];render();},
   libGroup(el){ui.libCollapsed=ui.libCollapsed||{};ui.libCollapsed[el.dataset.v]=!ui.libCollapsed[el.dataset.v];render();},
   formClear(el){const f=el.dataset.f;resetForm(f);ui.open['bp-'+f]=false;render();$('#'+f+'-name')?.focus();toast('Form cleared');},
@@ -1261,7 +1297,7 @@ const A={
   pwShow(el){ui.showPw[el.dataset.id]=!ui.showPw[el.dataset.id];render();},
   auth(){doAuth();},
   nameSave(){const n=val('p-name').trim();if(!n)return toast('Name can’t be empty.');acct.name=n;sessSet(acct);cloudProfile({name:n});render();toast('Name updated');},
-  async signOut(){clearTimeout(pushTimer);if(acct)await pushCloud();await sb.auth.signOut();acct=null;sessClear();D=blankData();resetUi();ui.tab='account';ui.authTab='login';applyTheme(defaultTheme());render();toast('Signed out');},
+  async signOut(){clearTimeout(pushTimer);clearTimeout(retryTimer);if(acct)await pushCloud();await sb.auth.signOut();acct=null;pullOK=false;holdLocal=false;syncErr='';sessClear();D=blankData();resetUi();ui.tab='account';ui.authTab='login';applyTheme(defaultTheme());render();toast('Signed out');},
   changePw(){doChangePw();},
 
   /* theme */
@@ -1335,14 +1371,15 @@ async function doAuth(){
       if(error)return fail(authMsg(error.message));
       if(!data.session){ui.authTab='login';ui.busy=false;ui.msg={ok:true,text:'Check your email to confirm, then log in.'};return render();}
       acct={key:data.user.id,name,email:data.user.email,tz:tzv,remember};sessSet(acct);
-      D=blankData();resetUi();ui.tab='account';applyTheme(defaultTheme());commit({now:true});
+      pullOK=true;holdLocal=false;syncErr='';D=blankData();resetUi();ui.tab='account';applyTheme(defaultTheme());commit({now:true});
       ui.busy=false;render();toast(`Welcome to FlowSpace, ${name}`);
     }else if(t==='login'){
       const{data,error}=await sb.auth.signInWithPassword({email,password:pw});
       if(error)return fail(authMsg(error.message));
       const m=data.user.user_metadata||{};
       acct={key:data.user.id,name:m.name||email.split('@')[0],email:data.user.email,tz:m.tz||DEFAULT_TZ,remember};sessSet(acct);
-      const tab=ui.tab;D=await pullData(acct.key);resetUi();ui.tab=tab;applyTheme();ui.busy=false;render();toast(`Welcome back, ${acct.name}`);
+      const tab=ui.tab;D=await pullData(acct.key);resetUi();ui.tab=pullOK?tab:'account';applyTheme();ui.busy=false;render();
+      if(pullOK)toast(`Welcome back, ${acct.name}`);else toast('Signed in, but your saved data couldn’t be loaded. See the message below.');
     }else{
       const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
       if(error)return fail(authMsg(error.message));
