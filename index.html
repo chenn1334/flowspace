@@ -730,7 +730,7 @@ function tStart(){unlockAudio();const st=curSt();if(!st)return;
   if(T.phase==='done'){tReset();}
   if(T.phase==='idle'){tSegment();}
   else if(T.phase==='wait'){tGo(T.idx+1,true);return;}
-  T.running=true;T.last=performance.now();paintTimer();}
+  T.running=true;T.last=performance.now();wakeAcquire();paintTimer();}
 const tickSecs=()=>clamp(Math.round(+D.settings.tick||0),0,60);
 function tickCheck(){
   const n=tickSecs();
@@ -758,8 +758,19 @@ function tDone(){
 function tAdjust(sec){if(!curSt())return;if(T.phase==='idle'){T.phase='run';T.remain=T.total=dur(curSt());}
   if(T.phase==='done'||T.phase==='wait')return;
   T.remain=Math.max(0,T.remain+sec);if(T.remain>T.total)T.total=T.remain;if(T.remain<=0)tDone();paintTimer();}
-setInterval(()=>{if(!T.running)return;const now=performance.now();T.remain-=(now-T.last)/1000;T.last=now;tickCheck();if(T.remain<=0)tDone();paintTimer();},200);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&T.running){T.last=performance.now();}});
+/* keep the screen awake while the timer runs (Screen Wake Lock API) */
+let wakeLock=null,wakeBusy=false,wakeWarned=false;
+async function wakeAcquire(){
+  if(wakeLock||wakeBusy||document.hidden)return;
+  if(!('wakeLock' in navigator)){if(!wakeWarned){wakeWarned=true;toast('This browser can’t keep the screen awake. Turn off auto-lock in your device settings while stretching.');}return;}
+  wakeBusy=true;
+  try{wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});}catch(e){wakeLock=null;}
+  wakeBusy=false;
+}
+function wakeRelease(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}}
+function wakeSync(){if(T.running)wakeAcquire();else wakeRelease();}
+setInterval(()=>{wakeSync();if(!T.running)return;const now=performance.now();T.remain-=(now-T.last)/1000;T.last=now;tickCheck();if(T.remain<=0)tDone();paintTimer();},200);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&T.running){T.last=performance.now();wakeAcquire();}});
 
 function phaseLabel(){const st=curSt();const sd=sides(st)[T.side];
   return{idle:'Ready when you are',prep:sd?`Get ready · ${sd} side next`:'Get ready',run:sd?`${sd} side`:'Hold and breathe',wait:"Time's up",done:'Session complete'}[T.phase];}
