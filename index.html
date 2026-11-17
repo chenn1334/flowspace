@@ -398,6 +398,25 @@ function getWeek(mon){let w=D.weeks[mon];if(!w){w=D.weeks[mon]={objective:'',goa
   for(let i=0;i<7;i++){if(!w.days[i])w.days[i]={focus:'',tasks:[]};}return w;}
 function peekWeek(mon){return D.weeks[mon]||null;}
 function getEntry(date){if(!D.diary[date])D.diary[date]={feelings:[],proud:'',cats:[],qa:[],wins:[]};return D.diary[date];}
+function moveDiaryEntry(from,to){
+  const src=D.diary[from];if(!src||!hasEntry(from))return;
+  if(from===to){toast('That’s already this entry’s date');return;}
+  const dst=D.diary[to],long=d=>nice(d,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  if(dst&&hasEntry(to)){
+    if(!confirm(`There’s already an entry on ${long(to)}. Merge this entry into it?`))return;
+    if(!dst.wins)dst.wins=[];
+    dst.feelings=[...new Set([...dst.feelings,...src.feelings])];
+    dst.cats=[...new Set([...dst.cats,...src.cats])];
+    dst.wins=[...dst.wins,...(src.wins||[])];
+    dst.proud=[dst.proud,src.proud].map(x=>(x||'').trim()).filter(Boolean).join('\n\n');
+    src.qa.forEach(q=>{const ex=dst.qa.find(x=>x.pid===q.pid);
+      if(!ex)dst.qa.push(q);
+      else if((q.a||'').trim())ex.a=[(ex.a||'').trim(),q.a.trim()].filter(Boolean).join('\n\n');});
+  }else D.diary[to]=src;
+  delete D.diary[from];
+  ui.diaryDate=to;ui.histMonth=null;commit();render();
+  toast(`Moved to ${long(to)}`);
+}
 function hasEntry(date){const e=D.diary[date];return !!(e&&(e.feelings.length||(e.proud||'').trim()||e.cats.length||e.qa.some(q=>(q.a||'').trim())||(e.wins&&e.wins.length)));}
 function session(){return D.sessions.find(s=>s.id===D.activeSession)||null;}
 
@@ -592,6 +611,26 @@ function synthTick(final){
   w(0,'RIFF');v.setUint32(4,36+pcm.byteLength,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,pcm.byteLength,true);
   return tickCache[k]=URL.createObjectURL(new Blob([head,pcm.buffer],{type:'audio/wav'}));
 }
+/* prep-time countdown ticks: five different timbres, deliberately unlike the stretch ticks */
+const PREP_SOUNDS=[['Wood block',720,1080,'wood'],['Soft pop',460,700,'pop'],['Digital beep',1000,1600,'beep'],['Low drum',130,210,'drum'],['Glass ping',1500,2250,'ping']];
+const prepCache={};
+const prepSoundIdx=()=>clamp(Math.round(+D.settings.prepSound||0),0,PREP_SOUNDS.length-1);
+function synthPrepTick(idx,final){
+  const key=idx+':'+(final?1:0);if(prepCache[key])return prepCache[key];
+  const[,f0,f1,type]=PREP_SOUNDS[idx],f=final?f1:f0,sr=22050;
+  const dur=({wood:.12,pop:.16,beep:.07,drum:.22,ping:.35})[type]*(final?1.7:1);
+  const len=Math.ceil(sr*dur),pcm=new Int16Array(len);let ph=0;
+  for(let i=0;i<len;i++){const t=i/sr;let v=0,env=1;
+    if(type==='wood'){ph+=2*Math.PI*f/sr;v=Math.sin(ph)+.35*Math.sin(ph*3.2);env=Math.exp(-t*38);}
+    else if(type==='pop'){ph+=2*Math.PI*f*(1+.9*Math.exp(-t*45))/sr;v=Math.sin(ph);env=Math.min(1,t*500)*Math.exp(-t*22);}
+    else if(type==='beep'){ph+=2*Math.PI*f/sr;v=(Math.sin(ph)>0?.55:-.55);env=Math.min(1,t*800)*Math.min(1,(dur-t)*200);}
+    else if(type==='drum'){ph+=2*Math.PI*f*(1+1.8*Math.exp(-t*28))/sr;v=Math.sin(ph);env=Math.min(1,t*600)*Math.exp(-t*13);}
+    else{ph+=2*Math.PI*f/sr;v=Math.sin(ph)+.45*Math.sin(ph*2.76)*Math.exp(-t*10);env=Math.min(1,t*600)*Math.exp(-t*11);}
+    pcm[i]=clamp(v*env*.7,-1,1)*32767;}
+  const head=new ArrayBuffer(44),dv=new DataView(head);const w=(o,x)=>[...x].forEach((c,j)=>dv.setUint8(o+j,c.charCodeAt(0)));
+  w(0,'RIFF');dv.setUint32(4,36+pcm.byteLength,true);w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,sr,true);dv.setUint32(28,sr*2,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);w(36,'data');dv.setUint32(40,pcm.byteLength,true);
+  return prepCache[key]=URL.createObjectURL(new Blob([head,pcm.buffer],{type:'audio/wav'}));
+}
 const player=new Audio();player.setAttribute('playsinline','');player.preload='auto';
 let audioUnlocked=false;
 let silentURL=null;
@@ -601,6 +640,7 @@ function silentWav(){if(silentURL)return silentURL;const n=2205,h=new ArrayBuffe
 function unlockAudio(){if(audioUnlocked)return;audioUnlocked=true;try{player.src=silentWav();const p=player.play();if(p)p.then(()=>{player.pause();}).catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
 function playRing(i){i=i??D.settings.ringtone??0;try{player.pause();player.src=synthRing(i);player.volume=clamp(+D.settings.volume,0,1);player.currentTime=0;const p=player.play();if(p)p.catch(()=>{});}catch(e){}}
 
+function playPrepTick(final){try{player.pause();player.src=synthPrepTick(prepSoundIdx(),!!final);player.volume=clamp(+D.settings.volume,0,1);player.currentTime=0;const p=player.play();if(p)p.catch(()=>{});}catch(e){}}
 function playTick(final){try{player.pause();player.src=synthTick(!!final);player.volume=clamp(+D.settings.volume,0,1);player.currentTime=0;const p=player.play();if(p)p.catch(()=>{});}catch(e){}}
 
 /* ---------- confetti ---------- */
@@ -651,9 +691,9 @@ function renderModal(){
   const el=$('#modal');
   if(ui.cal){const c=ui.cal;
     el.innerHTML=`<div class="scrim" data-a="closeModal" data-self="1"><div class="modal" role="dialog" aria-label="Pick a date">
-      <div class="row between"><h3>${c.kind==='week'?'Choose a week':'Choose a day'}</h3><button class="btn sm ghost" data-a="closeModal">Close</button></div>
+      <div class="row between"><h3>${c.kind==='week'?'Choose a week':c.kind==='move'?'Move this entry to…':'Choose a day'}</h3><button class="btn sm ghost" data-a="closeModal">Close</button></div>
       <div class="mt">${calTop(c.month,'calMove')}${calGrid(c.month,c.kind==='week'?{week:ui.week}:{sel:ui.diaryDate,marks:hasEntry})}</div>
-      <div class="row mt"><button class="btn acc" data-a="calToday">Jump to Today</button><span class="muted small">${c.kind==='diary'?'Dots mark days with entries.':'Each week keeps its own plan.'}</span></div>
+      <div class="row mt"><button class="btn acc" data-a="calToday">Jump to Today</button><span class="muted small">${c.kind==='move'?'Pick the correct date. Dots mark days that already have an entry; the two will be merged.':c.kind==='diary'?'Dots mark days with entries.':'Each week keeps its own plan.'}</span></div>
     </div></div>`;return;}
   if(ui.themeOpen){el.innerHTML=themeModal();return;}
   el.innerHTML='';
@@ -732,7 +772,17 @@ function tStart(){unlockAudio();const st=curSt();if(!st)return;
   else if(T.phase==='wait'){tGo(T.idx+1,true);return;}
   T.running=true;T.last=performance.now();wakeAcquire();paintTimer();}
 const tickSecs=()=>clamp(Math.round(+D.settings.tick||0),0,60);
+const prepTickSecs=()=>{const v=D.settings.prepTick;return v===undefined?3:clamp(Math.round(+v||0),0,60);};
 function tickCheck(){
+  if(T.phase==='prep'){
+    const pn=Math.min(prepTickSecs(),Math.ceil(T.total)-1);   // always leave the first second silent
+    if(pn<1)return;
+    const sec=Math.ceil(T.remain),key='p:'+T.idx+':'+T.side+':'+T.total;
+    if(T.tk!==key){T.tk=key;T.tl=pn+1;}
+    if(sec>pn)T.tl=pn+1;
+    if(sec>=1&&sec<=pn&&sec<T.tl){T.tl=sec;playPrepTick(sec===1);}
+    return;
+  }
   const n=tickSecs();
   if(!n||T.phase!=='run'||T.total<=n)return;
   const sec=Math.ceil(T.remain),key=T.idx+':'+T.side+':'+T.total;
@@ -824,7 +874,10 @@ function vTimer(){
     <div><label class="f">When the timer reaches zero</label><div class="seg"><button class="${R.autoNext?'on':''}" data-a="autoNext" data-v="1">Auto jump to next stretch</button><button class="${!R.autoNext?'on':''}" data-a="autoNext" data-v="0">Manually move to next</button></div>
       <label class="f" for="prep">Prep time before each stretch (0–600 seconds)</label><input class="in" type="number" min="0" max="600" id="prep" data-in="prep" value="${R.prep===''?'':R.prep}" placeholder="Seconds">
       <label class="f" for="tick">Countdown ticks before each stretch ends (seconds, 0 = off)</label><div class="row"><input class="in" type="number" min="0" max="60" id="tick" data-in="tick" value="${R.tick===''?'':R.tick}" placeholder="3" style="flex:1"><button class="btn" data-a="hearTick">▶ Hear tick</button></div>
-      <p class="small muted mt">A soft tick each second for the last N seconds, with a higher one on the final second.</p></div>
+      <p class="small muted mt">A soft tick each second for the last N seconds, with a higher one on the final second.</p>
+      <label class="f" for="ptick">Prep countdown ticks (last N seconds of prep time, 0 = off)</label><input class="in" type="number" min="0" max="60" id="ptick" data-in="ptick" value="${R.prepTick===undefined?3:R.prepTick}" placeholder="3">
+      <label class="f" for="psound">Prep tick sound</label><div class="row"><select class="in" id="psound" data-ch="psound" style="flex:1;min-width:0">${PREP_SOUNDS.map((x,i)=>`<option value="${i}" ${prepSoundIdx()===i?'selected':''}>${i+1}. ${x[0]}</option>`).join('')}</select><button class="btn" data-a="hearPrep">▶ Hear prep tick</button></div>
+      <p class="small muted mt">A different sound from the stretch ticks, with a higher “go” tick on the last second. Only plays when a prep time is set above.</p></div>
   </div>`:''}</div>`;
 }
 function stRow(st,i,timer){
@@ -1061,7 +1114,8 @@ function emojiPanel(k){
 function vDiary(){
   const d=ui.diaryDate,today=todayStr();
   const hd=`<div style="flex:1 1 auto"><button class="datehead" data-a="openCal" data-k="diary" aria-label="Choose a date"><span>${nice(d,{weekday:'long',month:'long',day:'numeric'})}</span><span class="cal-ico">🗓️</span></button>
-    <div class="weeknav mt"><button class="btn sm" data-a="dayStep" data-d="-1" aria-label="Previous day">‹</button>${d===today?'<span class="tag acc">Today</span>':'<button class="btn sm" data-a="dayToday">Today</button>'}<button class="btn sm" data-a="dayStep" data-d="1" aria-label="Next day">›</button><span class="small muted">${nice(d,{year:'numeric'})}</span></div></div>`;
+    <div class="weeknav mt"><button class="btn sm" data-a="dayStep" data-d="-1" aria-label="Previous day">‹</button>${d===today?'<span class="tag acc">Today</span>':'<button class="btn sm" data-a="dayToday">Today</button>'}<button class="btn sm" data-a="dayStep" data-d="1" aria-label="Next day">›</button><span class="small muted">${nice(d,{year:'numeric'})}</span></div>
+    ${ui.sub.diary==='entry'&&hasEntry(d)?'<button class="btn sm mt" data-a="moveEntryOpen">↪ Move this entry to another date</button>':''}</div>`;
   const tabs=[['entry','📓 Today’s Proud Entry'],['history','🗓️ Calendar & History']];
   return`<div class="head">${hd}<div class="subtabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" class="${ui.sub.diary===k?'on':''}" data-a="sub" data-s="${k}">${l}</button>`).join('')}</div></div>`+(ui.sub.diary==='entry'?vEntry():vHistory());
 }
@@ -1168,8 +1222,10 @@ const A={
   closeModal(el,e){if(el.dataset.self&&e.target!==el)return;ui.cal=null;ui.themeOpen=false;renderModal();},
   openCal(el){openCal(el.dataset.k);},
   calMove(el){ui.cal.month=addMonths(ui.cal.month,+el.dataset.step);renderModal();},
-  calToday(){const t=todayStr();if(ui.cal.kind==='week')ui.week=mondayOf(t);else ui.diaryDate=t;ui.cal=null;renderModal();render();},
+  moveEntryOpen(){ui.cal={kind:'move',month:ui.diaryDate.slice(0,7)};renderModal();},
+  calToday(){const t=todayStr();if(ui.cal.kind==='move'){const from=ui.diaryDate;ui.cal=null;renderModal();moveDiaryEntry(from,t);return;}if(ui.cal.kind==='week')ui.week=mondayOf(t);else ui.diaryDate=t;ui.cal=null;renderModal();render();},
   calPick(el){const d=el.dataset.d;
+    if(ui.cal&&ui.cal.kind==='move'){const from=ui.diaryDate;ui.cal=null;renderModal();moveDiaryEntry(from,d);return;}
     if(ui.cal){if(ui.cal.kind==='week'){ui.week=mondayOf(d);ui.pages.planner=null;}else{ui.diaryDate=d;ui.histMonth=null;}ui.cal=null;renderModal();render();}
     else{ui.diaryDate=d;ui.sub.diary='entry';render();top0();}},
   histMove(el){ui.histMonth=addMonths(ui.histMonth||ui.diaryDate.slice(0,7),+el.dataset.step);render();},
@@ -1195,6 +1251,7 @@ const A={
   tReset(){tReset();paintTimer(true);}, tJump(el){tGo(+el.dataset.i);},
   tAdj(el){tAdjust(+el.dataset.n);}, tSkipN(){const n=+val('skipN');if(n>0)tAdjust(-n);else toast('Enter the seconds to skip.');},
   hearTick(){unlockAudio();playTick(false);},
+  hearPrep(){unlockAudio();playPrepTick(false);setTimeout(()=>playPrepTick(true),650);},
   hear(){unlockAudio();playRing(+D.settings.ringtone);},
   autoNext(el){D.settings.autoNext=el.dataset.v==='1';commit();render();},
 
@@ -1329,6 +1386,8 @@ function addTagged(k,list,field){
 /* input / change handlers */
 const IN={
   vol(el){D.settings.volume=+el.value;const v=$('#volv');if(v)v.textContent=Math.round(el.value*100)+'%';commit();},
+  ptick(el){D.settings.prepTick=el.value===''?'':clamp(Math.round(+el.value),0,60);commit();},
+  psound(el){D.settings.prepSound=+el.value;commit();unlockAudio();playPrepTick(false);setTimeout(()=>playPrepTick(true),650);},
   tick(el){D.settings.tick=el.value===''?'':clamp(Math.round(+el.value),0,60);commit();},
   prep(el){D.settings.prep=el.value===''?'':clamp(+el.value,0,600);commit();},
   draftName(el){ui.draft.name=el.value;$$('[data-a=libAdd][data-t=draft]:not([disabled])').forEach(b=>b.textContent='+ Add to '+(el.value.trim()||'New Session'));},
